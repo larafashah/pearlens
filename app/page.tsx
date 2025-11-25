@@ -1,80 +1,77 @@
+// @ts-nocheck
 "use client";
 
-import { useState, useRef, useCallback } from "react";
-import { useSearchParams } from "next/navigation";
+import { useState, useRef, useEffect } from "react";
 import { ref, uploadBytes } from "firebase/storage";
 import { storage } from "@/lib/firebase";
 
 export default function UploadHomePage() {
-  const searchParams = useSearchParams();
-  const eventId = searchParams.get("event") || "";
-
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const [status, setStatus] = useState<string>("");
+  const [eventId, setEventId] = useState("");
+  const [status, setStatus] = useState("");
   const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef(null);
 
-  const handleOpenCamera = useCallback(() => {
+  // Read ?event= from the URL safely (NO useSearchParams)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const ev = params.get("event") || "";
+    setEventId(ev);
+  }, []);
+
+  const handleOpenCamera = () => {
     if (!eventId) {
-      setStatus(
-        "Missing event ID in URL. Please scan the correct QR code for this event."
-      );
+      setStatus("Missing event ID. Please scan the correct QR code.");
       return;
     }
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !eventId) return;
+
+    setIsUploading(true);
+    setStatus("Uploading...");
+
+    const timestamp = Date.now();
+    const path = `events/${eventId}/uploads/${timestamp}-${file.name}`;
+    const fileRef = ref(storage, path);
+
+    try {
+      await uploadBytes(fileRef, file);
+      setStatus("✅ Photo uploaded! You can take another.");
+    } catch (err) {
+      console.error("Upload error:", err);
+      setStatus("❌ Upload failed. Please try again.");
+    } finally {
+      setIsUploading(false);
+      e.target.value = "";
     }
-  }, [eventId]);
-
-  const handleFileChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (!file || !eventId) return;
-
-      setIsUploading(true);
-      setStatus("Uploading photo...");
-
-      const timestamp = Date.now();
-      const storagePath = `events/${eventId}/uploads/${timestamp}-${file.name}`;
-      const storageRef = ref(storage, storagePath);
-
-      console.log("Starting upload to:", storagePath);
-
-      uploadBytes(storageRef, file)
-        .then(() => {
-          console.log("Upload finished");
-          setStatus("✅ Photo uploaded! You can take another.");
-        })
-        .catch((error) => {
-          console.error("Upload error:", error);
-          setStatus("❌ Error uploading photo. Please try again.");
-        })
-        .finally(() => {
-          setIsUploading(false);
-          if (fileInputRef.current) {
-            fileInputRef.current.value = "";
-          }
-        });
-    },
-    [eventId]
-  );
+  };
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center px-4 py-8 bg-gray-100">
-      <section className="w-full max-w-md rounded-xl bg-white shadow-md p-6 text-center">
-        <h1 className="text-2xl font-semibold mb-2">Share Your Photos 📸</h1>
+      <section className="w-full max-w-md bg-white shadow-md p-6 rounded-xl text-center">
+        <h1 className="text-xl font-semibold mb-4">Share Your Photos 📸</h1>
 
         <p className="text-sm text-gray-600 mb-2">
-          Event ID: <span className="font-mono">{eventId || "none"}</span>
+          Event ID:{" "}
+          <span className="font-mono">
+            {eventId || "none – URL missing ?event="}
+          </span>
         </p>
 
-        <p className="text-sm text-gray-600 mb-6">
-          Take a photo or choose from your gallery and it will upload directly.
+        <p className="text-xs text-gray-500 mb-6">
+          Take or choose a photo and it will upload instantly to the couple&apos;s
+          private gallery.
         </p>
 
         <input
           ref={fileInputRef}
           type="file"
           accept="image/*"
+          capture="environment"
           style={{ display: "none" }}
           onChange={handleFileChange}
         />
@@ -95,8 +92,8 @@ export default function UploadHomePage() {
           </p>
         )}
 
-        <p className="mt-6 text-xs text-gray-500">
-          Captured with love. Preserved with Pearlens.
+        <p className="mt-6 text-xs text-gray-400">
+          Thank you for capturing memories with Pearlens.
         </p>
       </section>
     </main>

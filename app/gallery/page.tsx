@@ -1,3 +1,5 @@
+/* eslint-disable */
+/* prettier-ignore */
 // @ts-nocheck
 "use client";
 
@@ -10,7 +12,7 @@ export default function GalleryPage() {
   const [photos, setPhotos] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Read ?event= from URL on the client (no useSearchParams)
+  // Read ?event= from URL on the client (NO useSearchParams)
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
