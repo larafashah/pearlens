@@ -1,20 +1,24 @@
-/* eslint-disable */
-/* prettier-ignore */
 // @ts-nocheck
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
 import { ref, listAll, getDownloadURL } from "firebase/storage";
 import { storage } from "@/lib/firebase";
 
 export default function GalleryPage() {
-  const searchParams = useSearchParams();
-  const eventId = searchParams.get("event") || "";
-
+  const [eventId, setEventId] = useState("");
   const [photos, setPhotos] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Read ?event= from URL on the client (no useSearchParams)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const ev = params.get("event") || "";
+    setEventId(ev);
+  }, []);
+
+  // Load photos once we know the event ID
   useEffect(() => {
     if (!eventId) {
       setLoading(false);
