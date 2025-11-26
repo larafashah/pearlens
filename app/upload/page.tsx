@@ -3,7 +3,7 @@
 // @ts-nocheck
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { ref, uploadBytes } from "firebase/storage";
 import { storage } from "@/lib/firebase";
 
@@ -11,29 +11,24 @@ export default function UploadPage() {
   const [eventId, setEventId] = useState("");
   const [status, setStatus] = useState("");
   const [isUploading, setIsUploading] = useState(false);
-  const fileInputRef = useRef(null);
 
-  // Read ?event= from the URL (NO useSearchParams)
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
-    const ev = params.get("event") || "";
-    setEventId(ev);
+    setEventId(params.get("event") || "");
   }, []);
 
-  const handleOpenCamera = () => {
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) {
+      console.log("[UPLOAD] No file selected");
+      return;
+    }
+
     if (!eventId) {
       setStatus("Missing event ID. Please scan the correct QR code.");
       return;
     }
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
-    }
-  };
-
-  const handleFileChange = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file || !eventId) return;
 
     setIsUploading(true);
     setStatus("Uploading...");
@@ -45,9 +40,9 @@ export default function UploadPage() {
     try {
       await uploadBytes(fileRef, file);
       setStatus("✅ Photo uploaded! You can take another.");
-    } catch (err) {
-      console.error("Upload error:", err);
-      setStatus("❌ Upload failed. Please try again.");
+    } catch (error) {
+      console.error("[UPLOAD] Error uploading:", error);
+      setStatus(`❌ Upload failed: ${error.message || "Unknown error"}`);
     } finally {
       setIsUploading(false);
       e.target.value = "";
@@ -71,24 +66,26 @@ export default function UploadPage() {
           private gallery.
         </p>
 
+        {/* Hidden real file input */}
         <input
-          ref={fileInputRef}
+          id="pearlens-file-input"
           type="file"
           accept="image/*"
           capture="environment"
-          style={{ display: "none" }}
           onChange={handleFileChange}
+          disabled={isUploading}
+          className="hidden"
         />
 
-        <button
-          onClick={handleOpenCamera}
-          disabled={isUploading}
-          className={`w-full py-3 rounded-lg text-white font-medium ${
-            isUploading ? "bg-gray-400" : "bg-black"
+        {/* Pretty button that triggers the input */}
+        <label
+          htmlFor="pearlens-file-input"
+          className={`inline-flex w-full items-center justify-center rounded-lg px-4 py-3 text-sm font-medium text-white ${
+            isUploading ? "bg-gray-400 cursor-wait" : "bg-black cursor-pointer"
           }`}
         >
           {isUploading ? "Uploading..." : "Open Camera & Upload"}
-        </button>
+        </label>
 
         {status && (
           <p className="mt-4 text-sm text-gray-700 whitespace-pre-line">
@@ -97,7 +94,7 @@ export default function UploadPage() {
         )}
 
         <p className="mt-6 text-xs text-gray-400">
-          Thank you for capturing memories with Pearlens.
+          Captured with love. Preserved with Pearlens.
         </p>
       </section>
     </main>
