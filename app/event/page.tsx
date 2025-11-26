@@ -26,7 +26,7 @@ export default function EventSetupPage() {
     setEventId(`${slug}-${year}`);
   };
 
-  const uploadUrl = eventId ? `${baseUrl}/?event=${eventId}` : "";
+  const uploadUrl = eventId ? `${baseUrl}/upload?event=${eventId}` : "";
   const galleryUrl = eventId ? `${baseUrl}/gallery?event=${eventId}` : "";
 
   return (
