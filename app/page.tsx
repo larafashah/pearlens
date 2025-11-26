@@ -19,12 +19,7 @@ export default function HomePage() {
           </p>
 
           <div className="flex flex-wrap gap-3 mb-10">
-            <a
-              href="/event"
-              className="px-6 py-3 rounded-full bg-yellow-500 text-black text-sm font-medium tracking-wide hover:bg-yellow-400 transition"
-            >
-              Set up an event
-            </a>
+            {/* Public button only scrolls on the page now */}
             <a
               href="#how-it-works"
               className="px-6 py-3 rounded-full border border-gray-600 text-sm font-medium tracking-wide hover:border-yellow-500 hover:text-yellow-300 transition"
@@ -40,11 +35,11 @@ export default function HomePage() {
             </div>
             <div>
               <p className="font-semibold text-white">Private gallery</p>
-              <p>Only you and your planner receive the link.</p>
+              <p>Only the couple receives the link.</p>
             </div>
             <div>
               <p className="font-semibold text-white">Perfect for venues</p>
-              <p>Elegant enough to sit on any ballroom table.</p>
+              <p>Elegant enough for any ballroom table.</p>
             </div>
           </div>
         </div>
@@ -64,10 +59,10 @@ export default function HomePage() {
               <p className="text-xs uppercase tracking-[0.2em] text-yellow-500">
                 Step 1
               </p>
-              <p className="font-medium text-white">We create your event ID</p>
+              <p className="font-medium text-white">We create your event link</p>
               <p>
-                Use the private <span className="text-yellow-400">/event</span>{" "}
-                page to generate a custom link for your wedding.
+                You&apos;ll receive a unique upload link for your wedding that
+                connects directly to your private gallery.
               </p>
             </div>
             <div className="space-y-2">
