@@ -12,7 +12,6 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID!,
 };
 
-// Prevent duplicate initialization
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
 export const storage = getStorage(app);
