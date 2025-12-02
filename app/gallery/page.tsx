@@ -11,204 +11,261 @@ export default function GalleryPage() {
   const [eventId, setEventId] = useState("");
   const [photos, setPhotos] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
-  // For swipe gestures
-  const [touchStartX, setTouchStartX] = useState<number | null>(null);
-  const [touchEndX, setTouchEndX] = useState<number | null>(null);
+  // Projector mode state
+  const [isProjector, setIsProjector] = useState(false);
+  const [projectorSeconds] = useState(8); // change to 5 / 10 if you want faster/slower
 
-  // Read ?event=
+  // Read ?event= from URL
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
-    setEventId(params.get("event") || "");
+    const id = params.get("event") || "";
+    setEventId(id);
   }, []);
 
-  // Load photos from Firebase Storage
+  // Load images from Firebase Storage
   useEffect(() => {
-    const loadPhotos = async () => {
-      if (!eventId) {
-        setLoading(false);
-        return;
-      }
+    if (!eventId) return;
 
+    const load = async () => {
       setLoading(true);
-      setError("");
-
+      setError(null);
       try {
         const folderRef = ref(storage, `events/${eventId}/uploads`);
         const result = await listAll(folderRef);
+
         const urls = await Promise.all(
           result.items.map((item) => getDownloadURL(item))
         );
-        setPhotos(urls);
+
+        // Sort by path (so timestamps in filenames roughly sort)
+        const sorted = urls.slice().sort();
+        setPhotos(sorted);
       } catch (err: any) {
-        setError(err.message || "Failed to load photos.");
+        console.error("[GALLERY LOAD ERROR]", err);
+        setError("Unable to load photos for this event.");
       } finally {
         setLoading(false);
       }
     };
 
-    loadPhotos();
+    load();
   }, [eventId]);
 
-  const openLightbox = (idx: number) => setSelectedIndex(idx);
-  const closeLightbox = () => {
-    setSelectedIndex(null);
-    setTouchStartX(null);
-    setTouchEndX(null);
-  };
-
-  const nextImage = () => {
-    setSelectedIndex((prev) =>
-      prev === null ? null : (prev + 1) % photos.length
-    );
-  };
-
-  const prevImage = () => {
-    setSelectedIndex((prev) =>
-      prev === null ? null : (prev - 1 + photos.length) % photos.length
-    );
-  };
-
-  // Keyboard support: ESC to close, arrows to navigate
+  // Projector auto-advance
   useEffect(() => {
-    if (selectedIndex === null) return;
+    if (!isProjector || photos.length === 0) return;
 
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") closeLightbox();
-      if (e.key === "ArrowRight") nextImage();
-      if (e.key === "ArrowLeft") prevImage();
-    };
-
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
-  }, [selectedIndex, photos.length]);
-
-  // Touch handlers for swipe
-  const onTouchStart = (e: React.TouchEvent) => {
-    setTouchEndX(null);
-    setTouchStartX(e.touches[0].clientX);
-  };
-
-  const onTouchMove = (e: React.TouchEvent) => {
-    setTouchEndX(e.touches[0].clientX);
-  };
-
-  const onTouchEnd = () => {
-    if (touchStartX === null || touchEndX === null) return;
-
-    const distance = touchStartX - touchEndX;
-    const threshold = 50; // px
-
-    if (distance > threshold) {
-      // swipe left → next
-      nextImage();
-    } else if (distance < -threshold) {
-      // swipe right → prev
-      prevImage();
+    // Ensure we start somewhere
+    if (selectedIndex === null) {
+      setSelectedIndex(0);
     }
 
-    setTouchStartX(null);
-    setTouchEndX(null);
+    const intervalId = window.setInterval(() => {
+      setSelectedIndex((prev) => {
+        if (prev === null) return 0;
+        return (prev + 1) % photos.length;
+      });
+    }, projectorSeconds * 1000);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [isProjector, photos.length, projectorSeconds, selectedIndex]);
+
+  const handleThumbClick = (index: number) => {
+    setSelectedIndex(index);
   };
 
+  const handleCloseViewer = () => {
+    setSelectedIndex(null);
+  };
+
+  const goPrev = () => {
+    if (selectedIndex === null || photos.length === 0) return;
+    setSelectedIndex((selectedIndex - 1 + photos.length) % photos.length);
+  };
+
+  const goNext = () => {
+    if (selectedIndex === null || photos.length === 0) return;
+    setSelectedIndex((selectedIndex + 1) % photos.length);
+  };
+
+  const startProjector = () => {
+    if (photos.length === 0) return;
+    setSelectedIndex(0);
+    setIsProjector(true);
+  };
+
+  const stopProjector = () => {
+    setIsProjector(false);
+  };
+
+  const prettyEventLabel = eventId
+    ? eventId.replace(/[-_]+/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+    : "No Event Selected";
+
   return (
-    <main className="min-h-screen bg-black text-white px-4 py-6">
-      <section className="w-full max-w-5xl mx-auto">
-        <header className="mb-6">
-          <p className="text-xs uppercase tracking-[0.25em] text-yellow-500 mb-2">
-            Pearlens · Gallery
-          </p>
-          <h1 className="text-2xl sm:text-3xl font-semibold mb-1">
-            Event Gallery
-          </h1>
-          <p className="text-xs sm:text-sm text-gray-400">
-            {eventId
-              ? `Event: ${eventId}`
-              : "Missing event name. Check your link."}
-          </p>
+    <main className="min-h-screen bg-gray-100 px-4 py-6 md:py-10">
+      <section className="max-w-5xl mx-auto bg-white rounded-2xl shadow-md p-4 md:p-6">
+        {/* Header */}
+        <header className="mb-4 md:mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <div>
+            <h1 className="text-xl md:text-2xl font-semibold text-gray-900">
+              Pearlens Gallery
+            </h1>
+            <p className="text-sm md:text-base text-gray-700">
+              Event:{" "}
+              <span className="font-medium">
+                {prettyEventLabel}
+              </span>
+            </p>
+            <p className="mt-1 text-xs md:text-sm text-gray-600">
+              {photos.length > 0
+                ? `${photos.length} photo${photos.length === 1 ? "" : "s"}`
+                : "No photos uploaded yet."}
+            </p>
+          </div>
+
+          <div className="flex flex-col items-stretch md:items-end gap-2">
+            <button
+              type="button"
+              onClick={startProjector}
+              disabled={photos.length === 0}
+              className={`inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium ${
+                photos.length === 0
+                  ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                  : "bg-black text-white hover:bg-gray-900"
+              }`}
+            >
+              Start projector mode
+            </button>
+            <p className="text-[11px] md:text-xs text-gray-500 text-right max-w-xs">
+              Use this on a projector or big screen. Images will auto-advance
+              every {projectorSeconds} seconds. You can also use Next / Previous.
+            </p>
+          </div>
         </header>
 
+        {/* Loading / error */}
         {loading && (
-          <p className="text-sm text-gray-400">Loading photos…</p>
+          <p className="text-sm text-gray-700">Loading photos…</p>
+        )}
+        {error && (
+          <p className="text-sm text-red-600 mb-4">{error}</p>
         )}
 
-        {error && (
-          <p className="text-sm text-red-400">Error: {error}</p>
+        {/* Grid */}
+        {!loading && !error && photos.length > 0 && (
+          <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 md:gap-3">
+            {photos.map((url, index) => (
+              <button
+                key={url}
+                type="button"
+                onClick={() => handleThumbClick(index)}
+                className="relative aspect-square overflow-hidden rounded-lg border border-gray-200 bg-gray-50"
+              >
+                <img
+                  src={url}
+                  alt={`Photo ${index + 1}`}
+                  className="h-full w-full object-cover"
+                />
+              </button>
+            ))}
+          </div>
         )}
 
         {!loading && !error && photos.length === 0 && (
-          <p className="text-sm text-gray-400">
-            No uploads yet. Ask guests to scan the QR code!
+          <p className="text-sm text-gray-700">
+            No photos found yet for this event. Once guests start uploading,
+            they will appear here automatically.
           </p>
         )}
-
-        <div className="mt-4 columns-2 sm:columns-3 md:columns-4 gap-3 space-y-3">
-          {photos.map((url, idx) => (
-            <div
-              key={idx}
-              className="cursor-pointer break-inside-avoid overflow-hidden rounded-lg border border-neutral-800 hover:opacity-90 transition"
-              onClick={() => openLightbox(idx)}
-            >
-              <img src={url} className="w-full h-auto object-cover" />
-            </div>
-          ))}
-        </div>
       </section>
 
-      {/* Fullscreen Lightbox */}
-      {selectedIndex !== null && photos[selectedIndex] && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center"
-          onTouchStart={onTouchStart}
-          onTouchMove={onTouchMove}
-          onTouchEnd={onTouchEnd}
-        >
-          {/* Close Button */}
-          <button
-            onClick={closeLightbox}
-            className="absolute top-4 right-4 text-white text-3xl font-bold"
-          >
-            ×
-          </button>
-
-          {/* Prev Button */}
-          {photos.length > 1 && (
+      {/* Normal viewer (tap thumbnail, not projector) */}
+      {selectedIndex !== null && !isProjector && (
+        <div className="fixed inset-0 z-40 bg-black/80 flex items-center justify-center px-4">
+          <div className="relative max-w-4xl w-full max-h-[90vh] flex flex-col">
             <button
-              onClick={prevImage}
-              className="absolute left-4 text-4xl text-gray-300 select-none hidden sm:block"
+              onClick={handleCloseViewer}
+              className="absolute top-3 right-3 rounded-full bg-black/60 px-3 py-1 text-xs text-white"
             >
-              ‹
+              Close
             </button>
-          )}
 
-          {/* Image */}
-          <img
-            src={photos[selectedIndex]}
-            className="max-h-[90vh] max-w-[90vw] object-contain rounded-xl shadow-lg"
-          />
+            <div className="flex-1 flex items-center justify-center">
+              <img
+                src={photos[selectedIndex]}
+                alt={`Photo ${selectedIndex + 1}`}
+                className="max-h-[80vh] max-w-full object-contain rounded-lg"
+              />
+            </div>
 
-          {/* Next Button */}
-          {photos.length > 1 && (
+            <div className="mt-3 flex items-center justify-between text-white text-xs md:text-sm">
+              <button
+                onClick={goPrev}
+                className="px-3 py-1 rounded-full bg-white/10 hover:bg-white/20"
+              >
+                ◀ Previous
+              </button>
+              <span>
+                {selectedIndex + 1} / {photos.length}
+              </span>
+              <button
+                onClick={goNext}
+                className="px-3 py-1 rounded-full bg-white/10 hover:bg-white/20"
+              >
+                Next ▶
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Projector mode overlay */}
+      {isProjector && photos.length > 0 && selectedIndex !== null && (
+        <div className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center">
+          <div className="absolute top-3 left-4 text-xs md:text-sm text-gray-300">
+            {prettyEventLabel} — {selectedIndex + 1} / {photos.length}
+          </div>
+
+          <div className="max-w-[95vw] max-h-[85vh] flex items-center justify-center">
+            <img
+              src={photos[selectedIndex]}
+              alt={`Photo ${selectedIndex + 1}`}
+              className="max-h-[85vh] max-w-[95vw] object-contain"
+            />
+          </div>
+
+          <div className="mt-4 flex items-center gap-3 text-xs md:text-sm text-gray-100">
             <button
-              onClick={nextImage}
-              className="absolute right-4 text-4xl text-gray-300 select-none hidden sm:block"
+              onClick={stopProjector}
+              className="px-4 py-2 rounded-full bg-white/10 hover:bg-white/20"
             >
-              ›
+              Exit projector
             </button>
-          )}
+            <button
+              onClick={goPrev}
+              className="px-3 py-2 rounded-full bg-white/10 hover:bg-white/20"
+            >
+              ◀ Previous
+            </button>
+            <button
+              onClick={goNext}
+              className="px-3 py-2 rounded-full bg-white/10 hover:bg-white/20"
+            >
+              Next ▶
+            </button>
+          </div>
 
-          {/* Download Button */}
-          <a
-            href={photos[selectedIndex]}
-            download
-            className="absolute bottom-6 px-6 py-2 rounded-lg bg-white text-black font-medium"
-          >
-            Download Photo
-          </a>
+          <div className="mt-2 text-[11px] text-gray-400">
+            Auto-advancing every {projectorSeconds} seconds
+          </div>
         </div>
       )}
     </main>
