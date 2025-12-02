@@ -6,6 +6,8 @@
 import { useEffect, useState } from "react";
 import { ref, listAll, getDownloadURL } from "firebase/storage";
 import { storage } from "@/lib/firebase";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 export default function GalleryPage() {
   const [eventId, setEventId] = useState("");
@@ -15,9 +17,13 @@ export default function GalleryPage() {
 
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
-  // Projector mode state
+  // Projector mode
   const [isProjector, setIsProjector] = useState(false);
-  const [projectorSeconds] = useState(8); // change to 5 / 10 if you want faster/slower
+  const [projectorSeconds] = useState(8);
+  const [projectorAllowed, setProjectorAllowed] = useState(false);
+
+  // Optional: display name from event doc later if you want
+  const [eventDisplayName, setEventDisplayName] = useState<string | null>(null);
 
   // Read ?event= from URL
   useEffect(() => {
@@ -26,6 +32,32 @@ export default function GalleryPage() {
     const id = params.get("event") || "";
     setEventId(id);
   }, []);
+
+  // Load event config from Firestore (projectorEnabled, displayName)
+  useEffect(() => {
+    if (!eventId) return;
+
+    const loadConfig = async () => {
+      try {
+        const eventRef = doc(db, "events", eventId);
+        const snap = await getDoc(eventRef);
+        if (snap.exists()) {
+          const data = snap.data();
+          setProjectorAllowed(!!data.projectorEnabled);
+          if (data.displayName) {
+            setEventDisplayName(data.displayName as string);
+          }
+        } else {
+          setProjectorAllowed(false);
+        }
+      } catch (err) {
+        console.error("[GALLERY EVENT CONFIG ERROR]", err);
+        setProjectorAllowed(false);
+      }
+    };
+
+    loadConfig();
+  }, [eventId]);
 
   // Load images from Firebase Storage
   useEffect(() => {
@@ -42,7 +74,6 @@ export default function GalleryPage() {
           result.items.map((item) => getDownloadURL(item))
         );
 
-        // Sort by path (so timestamps in filenames roughly sort)
         const sorted = urls.slice().sort();
         setPhotos(sorted);
       } catch (err: any) {
@@ -60,7 +91,6 @@ export default function GalleryPage() {
   useEffect(() => {
     if (!isProjector || photos.length === 0) return;
 
-    // Ensure we start somewhere
     if (selectedIndex === null) {
       setSelectedIndex(0);
     }
@@ -96,7 +126,7 @@ export default function GalleryPage() {
   };
 
   const startProjector = () => {
-    if (photos.length === 0) return;
+    if (!projectorAllowed || photos.length === 0) return;
     setSelectedIndex(0);
     setIsProjector(true);
   };
@@ -105,8 +135,12 @@ export default function GalleryPage() {
     setIsProjector(false);
   };
 
-  const prettyEventLabel = eventId
-    ? eventId.replace(/[-_]+/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+  const prettyEventLabel = eventDisplayName
+    ? eventDisplayName
+    : eventId
+    ? eventId
+        .replace(/[-_]+/g, " ")
+        .replace(/\b\w/g, (c) => c.toUpperCase())
     : "No Event Selected";
 
   return (
@@ -132,22 +166,30 @@ export default function GalleryPage() {
           </div>
 
           <div className="flex flex-col items-stretch md:items-end gap-2">
-            <button
-              type="button"
-              onClick={startProjector}
-              disabled={photos.length === 0}
-              className={`inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium ${
-                photos.length === 0
-                  ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                  : "bg-black text-white hover:bg-gray-900"
-              }`}
-            >
-              Start projector mode
-            </button>
-            <p className="text-[11px] md:text-xs text-gray-500 text-right max-w-xs">
-              Use this on a projector or big screen. Images will auto-advance
-              every {projectorSeconds} seconds. You can also use Next / Previous.
-            </p>
+            {projectorAllowed ? (
+              <>
+                <button
+                  type="button"
+                  onClick={startProjector}
+                  disabled={photos.length === 0}
+                  className={`inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium ${
+                    photos.length === 0
+                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                      : "bg-black text-white hover:bg-gray-900"
+                  }`}
+                >
+                  Start projector mode
+                </button>
+                <p className="text-[11px] md:text-xs text-gray-500 text-right max-w-xs">
+                  Use this on a projector or big screen. Images will auto-advance
+                  every {projectorSeconds} seconds. You can also use Next / Previous.
+                </p>
+              </>
+            ) : (
+              <p className="text-[11px] md:text-xs text-gray-400 text-right max-w-xs">
+                Projector mode is not enabled for this event package.
+              </p>
+            )}
           </div>
         </header>
 
@@ -187,7 +229,7 @@ export default function GalleryPage() {
         )}
       </section>
 
-      {/* Normal viewer (tap thumbnail, not projector) */}
+      {/* Normal viewer (thumbnail click) */}
       {selectedIndex !== null && !isProjector && (
         <div className="fixed inset-0 z-40 bg-black/80 flex items-center justify-center px-4">
           <div className="relative max-w-4xl w-full max-h-[90vh] flex flex-col">
@@ -245,7 +287,7 @@ export default function GalleryPage() {
           <div className="mt-4 flex items-center gap-3 text-xs md:text-sm text-gray-100">
             <button
               onClick={stopProjector}
-              className="px-4 py-2 rounded-full bg-white/10 hover:bg-white/20"
+              className="px-4 py-2 rounded-full bg.white/10 hover:bg-white/20 bg-white/10"
             >
               Exit projector
             </button>

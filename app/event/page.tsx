@@ -13,6 +13,7 @@ export default function EventSetupPage() {
   const [displayName, setDisplayName] = useState("");
   const [baseUrl, setBaseUrl] = useState("");
   const [status, setStatus] = useState("");
+  const [projectorEnabled, setProjectorEnabled] = useState(false);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -48,6 +49,7 @@ export default function EventSetupPage() {
         eventId,
         coupleNames: coupleNames || null,
         displayName: displayName || coupleNames || eventId,
+        projectorEnabled: projectorEnabled,
         createdAt: new Date().toISOString(),
       });
 
@@ -125,6 +127,29 @@ export default function EventSetupPage() {
               Guests never see this. It becomes the folder name in Firebase and
               part of the URL.
             </p>
+          </div>
+
+          {/* Projector mode toggle */}
+          <div className="flex items-start gap-2 pt-1">
+            <input
+              id="projectorEnabled"
+              type="checkbox"
+              checked={projectorEnabled}
+              onChange={(e) => setProjectorEnabled(e.target.checked)}
+              className="mt-1 h-4 w-4 rounded border-gray-400 text-black focus:ring-black"
+            />
+            <div>
+              <label
+                htmlFor="projectorEnabled"
+                className="text-sm font-medium text-gray-900"
+              >
+                Enable projector mode for this event
+              </label>
+              <p className="text-xs md:text-sm text-gray-600">
+                When enabled, the gallery shows a full-screen slideshow button. Use
+                this for packages that include “projector display” at the venue.
+              </p>
+            </div>
           </div>
 
           {/* Save button + status */}
