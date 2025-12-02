@@ -1,0 +1,28 @@
+{
+  "redirects": [
+    {
+      "source": "/",
+      "has": [
+        { "type": "host", "value": "event.pearlens.com" }
+      ],
+      "destination": "/event",
+      "permanent": true
+    },
+    {
+      "source": "/",
+      "has": [
+        { "type": "host", "value": "upload.pearlens.com" }
+      ],
+      "destination": "/upload",
+      "permanent": true
+    },
+    {
+      "source": "/",
+      "has": [
+        { "type": "host", "value": "gallery.pearlens.com" }
+      ],
+      "destination": "/gallery",
+      "permanent": true
+    }
+  ]
+}
