@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 export default function HomePage() {
   return (
     <main className="min-h-screen bg-[#f7f4ef] text-[#111]">
@@ -6,26 +8,41 @@ export default function HomePage() {
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           {/* Logo */}
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full border border-black">
-              <span className="text-xs font-semibold tracking-[0.15em]">P</span>
+            <div className="relative h-8 w-[150px] sm:w-[180px]">
+              <Image
+                src="/pearlens-logo.png"
+                alt="Pearlens logo"
+                fill
+                className="object-contain"
+                priority
+              />
             </div>
-            <span className="text-lg font-semibold tracking-[0.3em] uppercase">
-              Pearlens
-            </span>
           </div>
 
           {/* Nav */}
           <nav className="hidden gap-6 text-sm md:flex">
-            <a href="#about" className="border-b border-black pb-[2px]">About</a>
-            <a href="#services" className="hover:text-neutral-700">Services</a>
-            <a href="#pricing" className="hover:text-neutral-700">Pricing</a>
-            <a href="#contact" className="hover:text-neutral-700">Contact</a>
+            <a href="#about" className="border-b border-black pb-[2px]">
+              About
+            </a>
+            <a href="#services" className="hover:text-neutral-700">
+              Services
+            </a>
+            <a href="#pricing" className="hover:text-neutral-700">
+              Pricing
+            </a>
+            <a href="#contact" className="hover:text-neutral-700">
+              Contact
+            </a>
           </nav>
 
           {/* Social (placeholders) */}
           <div className="hidden items-center gap-4 text-sm md:flex">
-            <a href="https://instagram.com" className="hover:text-neutral-700">IG</a>
-            <a href="https://x.com" className="hover:text-neutral-700">X</a>
+            <a href="https://instagram.com" className="hover:text-neutral-700">
+              IG
+            </a>
+            <a href="https://x.com" className="hover:text-neutral-700">
+              X
+            </a>
           </div>
         </div>
       </header>
@@ -84,11 +101,15 @@ export default function HomePage() {
             <div className="mt-4 grid grid-cols-2 gap-3 text-[0.7rem] text-neutral-700">
               <div className="rounded-2xl bg-[#f7f4ef]/70 p-3">
                 <p className="font-medium">For couples</p>
-                <p className="mt-1">Clear, stunning memories from every guest.</p>
+                <p className="mt-1">
+                  Clear, stunning memories from every guest.
+                </p>
               </div>
               <div className="rounded-2xl bg-[#f7f4ef]/70 p-3">
                 <p className="font-medium">For planners</p>
-                <p className="mt-1">A tech-forward touch to elevate your service.</p>
+                <p className="mt-1">
+                  A tech-forward touch to elevate your service.
+                </p>
               </div>
             </div>
           </div>
@@ -126,7 +147,10 @@ export default function HomePage() {
       </section>
 
       {/* How it Works */}
-      <section id="services" className="border-t border-neutral-200 bg-white px-6 py-16">
+      <section
+        id="services"
+        className="border-t border-neutral-200 bg-white px-6 py-16"
+      >
         <div className="mx-auto grid max-w-6xl gap-12 lg:grid-cols-[1.1fr,1fr]">
           <div>
             <h2 className="mb-6 text-2xl font-serif">How it works</h2>
@@ -135,25 +159,25 @@ export default function HomePage() {
               {
                 step: "Scan",
                 desc:
-                  "Guests scan a simple QR card at their table. No app downloads — just tap and go."
+                  "Guests scan a simple QR card at their table. No app downloads — just tap and go.",
               },
               {
                 step: "Snap",
                 desc:
-                  "They take photos and videos from their perspective — the real, unforgettable moments."
+                  "They take photos and videos from their perspective — the real, unforgettable moments.",
               },
               {
                 step: "Share",
                 desc:
-                  "Everything instantly flows into your private gallery, ready to download and save."
-              }
+                  "Everything instantly flows into your private gallery, ready to download and save.",
+              },
             ].map(({ step, desc }) => (
               <div key={step}>
                 <button className="flex w-full items-center justify-between border-b border-neutral-300 pb-3 text-left">
                   <span className="font-medium">{step}</span>
                   <span className="text-xs">▼</span>
                 </button>
-                <p className="mt-3 text-neutral-700 text-sm">{desc}</p>
+                <p className="mt-3 text-sm text-neutral-700">{desc}</p>
               </div>
             ))}
           </div>
@@ -178,7 +202,10 @@ export default function HomePage() {
       </section>
 
       {/* Pricing */}
-      <section id="pricing" className="border-t border-neutral-200 bg-white px-6 py-16">
+      <section
+        id="pricing"
+        className="border-t border-neutral-200 bg-white px-6 py-16"
+      >
         <div className="mx-auto max-w-6xl">
           <h2 className="mb-4 text-2xl font-serif">Pricing</h2>
           <p className="mb-8 max-w-2xl text-sm text-neutral-700">
@@ -231,11 +258,15 @@ export default function HomePage() {
       </section>
 
       {/* Contact Form */}
-      <section id="contact" className="border-t border-neutral-200 bg-[#f7f4ef] px-6 py-16">
+      <section
+        id="contact"
+        className="border-t border-neutral-200 bg-[#f7f4ef] px-6 py-16"
+      >
         <div className="mx-auto max-w-4xl">
           <h2 className="mb-6 text-2xl font-serif">Let’s capture every moment</h2>
           <p className="mb-8 text-sm text-neutral-700">
-            Tell us a little about your event — we’ll reach out with a custom quote.
+            Tell us a little about your event — we’ll reach out with a custom
+            quote.
           </p>
 
           <form
@@ -247,7 +278,7 @@ export default function HomePage() {
             <div className="grid gap-4 md:grid-cols-2">
               {["First Name", "Last Name"].map((label) => (
                 <div key={label}>
-                  <label className="block mb-1 text-xs font-medium uppercase tracking-[0.15em] text-neutral-600">
+                  <label className="mb-1 block text-xs font-medium uppercase tracking-[0.15em] text-neutral-600">
                     {label}
                   </label>
                   <input
@@ -260,7 +291,7 @@ export default function HomePage() {
             </div>
 
             <div>
-              <label className="block mb-1 text-xs font-medium uppercase tracking-[0.15em] text-neutral-600">
+              <label className="mb-1 block text-xs font-medium uppercase tracking-[0.15em] text-neutral-600">
                 Email
               </label>
               <input
@@ -273,7 +304,7 @@ export default function HomePage() {
 
             <div className="grid gap-4 md:grid-cols-2">
               <div>
-                <label className="block mb-1 text-xs font-medium uppercase tracking-[0.15em] text-neutral-600">
+                <label className="mb-1 block text-xs font-medium uppercase tracking-[0.15em] text-neutral-600">
                   Event Type
                 </label>
                 <input
@@ -284,7 +315,7 @@ export default function HomePage() {
                 />
               </div>
               <div>
-                <label className="block mb-1 text-xs font-medium uppercase tracking-[0.15em] text-neutral-600">
+                <label className="mb-1 block text-xs font-medium uppercase tracking-[0.15em] text-neutral-600">
                   Event Date
                 </label>
                 <input
@@ -298,7 +329,7 @@ export default function HomePage() {
 
             <div className="grid gap-4 md:grid-cols-2">
               <div>
-                <label className="block mb-1 text-xs font-medium uppercase tracking-[0.15em] text-neutral-600">
+                <label className="mb-1 block text-xs font-medium uppercase tracking-[0.15em] text-neutral-600">
                   Guest Count
                 </label>
                 <input
@@ -308,7 +339,7 @@ export default function HomePage() {
                 />
               </div>
               <div>
-                <label className="block mb-1 text-xs font-medium uppercase tracking-[0.15em] text-neutral-600">
+                <label className="mb-1 block text-xs font-medium uppercase tracking-[0.15em] text-neutral-600">
                   Venue + City
                 </label>
                 <input
@@ -319,7 +350,7 @@ export default function HomePage() {
             </div>
 
             <div>
-              <label className="block mb-1 text-xs font-medium uppercase tracking-[0.15em] text-neutral-600">
+              <label className="mb-1 block text-xs font-medium uppercase tracking-[0.15em] text-neutral-600">
                 Special Notes
               </label>
               <textarea
@@ -342,7 +373,7 @@ export default function HomePage() {
 
       {/* Footer */}
       <footer className="border-t border-neutral-200 bg-[#f7f4ef] px-6 py-8">
-        <div className="mx-auto flex max-w-6xl flex-col items-center text-center text-xs text-neutral-700 sm:flex-row sm:justify-between sm:text-left gap-2">
+        <div className="mx-auto flex max-w-6xl flex-col items-center gap-2 text-center text-xs text-neutral-700 sm:flex-row sm:justify-between sm:text-left">
           <p>Your Night. Your Guests. Their Lens.</p>
           <div className="space-x-3">
             <a href="mailto:hello@pearlens.com" className="underline">
