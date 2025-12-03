@@ -71,7 +71,7 @@ export default function HomePage() {
           <div className="mt-8 flex flex-wrap items-center gap-4">
             <a
               href="#contact"
-              className="rounded-full bg-black px-8 py-3 text-sm font-medium text-white hover:bg-neutral-900"
+              className="rounded-full bg-black px-8 py-3 text-sm font-medium text-white hover:bg-neutral-900 transition-colors"
             >
               Request a quote today
             </a>
@@ -146,7 +146,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* How it Works */}
+      {/* How it Works + CTA */}
       <section
         id="services"
         className="border-t border-neutral-200 bg-white px-6 py-16"
@@ -172,7 +172,7 @@ export default function HomePage() {
                   "Everything instantly flows into your private gallery, ready to download and save.",
               },
             ].map(({ step, desc }) => (
-              <div key={step}>
+              <div key={step} className="mb-4">
                 <button className="flex w-full items-center justify-between border-b border-neutral-300 pb-3 text-left">
                   <span className="font-medium">{step}</span>
                   <span className="text-xs">▼</span>
@@ -182,21 +182,23 @@ export default function HomePage() {
             ))}
           </div>
 
-          {/* CTA Copy Block */}
-          <div className="flex flex-col gap-6 text-left">
-            <p className="text-xl font-serif">
-              Your Night. Your Guests. Their Lens.
-            </p>
-            <p className="text-sm text-neutral-700 max-w-sm">
-              Keep the aesthetic intact while capturing the memories that matter
-              most.
-            </p>
-            <a
-              href="#contact"
-              className="rounded-full bg-black px-8 py-3 text-sm font-medium text-white hover:bg-neutral-900"
-            >
-              Request a quote today
-            </a>
+          {/* CTA Copy Block – constrained width, not a full bar */}
+          <div className="flex items-center justify-center">
+            <div className="w-full max-w-sm text-center lg:text-left">
+              <p className="text-xl font-serif mb-3">
+                Your Night. Your Guests. Their Lens.
+              </p>
+              <p className="text-sm text-neutral-700 mb-5">
+                Keep the aesthetic intact while capturing every moment — from
+                the quiet toasts to the wild dance floor.
+              </p>
+              <a
+                href="#contact"
+                className="inline-flex items-center justify-center rounded-full bg-black px-8 py-3 text-sm font-medium text-white hover:bg-neutral-900 transition-colors"
+              >
+                Request a quote today
+              </a>
+            </div>
           </div>
         </div>
       </section>
@@ -363,7 +365,7 @@ export default function HomePage() {
 
             <button
               type="submit"
-              className="mt-4 inline-flex rounded-full bg-black px-8 py-3 text-sm font-medium text-white hover:bg-neutral-900"
+              className="mt-4 inline-flex rounded-full bg-black px-8 py-3 text-sm font-medium text-white hover:bg-neutral-900 transition-colors"
             >
               Submit Inquiry
             </button>
