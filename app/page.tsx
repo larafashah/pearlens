@@ -58,7 +58,7 @@ export default function HomePage() {
           <p className="mb-4 text-xs font-semibold uppercase tracking-[0.25em] text-neutral-500">
             Guest Photo Sharing, Reimagined
           </p>
-          <h1 className="mb-6 text-4xl leading-tight sm:text-5xl md:text-6xl font-serif">
+          <h1 className="mb-6 text-4xl leading-tight font-serif sm:text-5xl md:text-6xl">
             A simpler, more elegant way to save memories.
           </h1>
           <p className="max-w-xl text-sm leading-relaxed text-neutral-700">
@@ -143,10 +143,9 @@ export default function HomePage() {
           </div>
 
           {/* Simple CTA block */}
-          <div className="flex flex-col justify-between gap-6">
-            <p className="text-lg font-serif">
-              Let&apos;s make your event feel as beautiful in photos as it does
-              in person.
+          <div className="flex flex-col items-start justify-between gap-6 text-left md:items-start">
+            <p className="text-xl font-serif">
+              Your Night. Your Guests. Their Lens.
             </p>
             <a
               href="#contact"
