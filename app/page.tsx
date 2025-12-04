@@ -168,7 +168,7 @@ export default function HomePage() {
           <h2 className="mb-8 text-2xl font-serif">How Pearlens works</h2>
 
           {/* Accordion steps */}
-          <div className="text-left">
+          <div>
             <div className="divide-y divide-neutral-200 border-t border-neutral-200">
               {steps.map((step) => (
                 <div key={step.id} className="border-b border-neutral-200">
@@ -189,7 +189,7 @@ export default function HomePage() {
                     </span>
                   </button>
                   {openStep === step.id && (
-                    <p className="pb-4 text-sm text-neutral-700">
+                    <p className="pb-4 text-sm text-neutral-700 text-center">
                       {step.desc}
                     </p>
                   )}
