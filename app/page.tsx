@@ -1,6 +1,32 @@
+"use client";
+
+import { useState } from "react";
 import Image from "next/image";
 
 export default function HomePage() {
+  const [openStep, setOpenStep] = useState<"scan" | "snap" | "share" | null>("scan");
+
+  const steps = [
+    {
+      id: "scan" as const,
+      label: "Scan",
+      desc:
+        "Guests scan a simple QR card at their table. No app downloads — just tap, open the link, and they’re ready.",
+    },
+    {
+      id: "snap" as const,
+      label: "Snap",
+      desc:
+        "They take photos and videos from their point of view — the laughter, the details, the moments you don’t see.",
+    },
+    {
+      id: "share" as const,
+      label: "Share",
+      desc:
+        "Every upload is saved to one private gallery for you. No group chats, no lost files — everything in one place.",
+    },
+  ];
+
   return (
     <main className="min-h-screen bg-[#f7f4ef] text-[#111]">
       {/* Header / Nav */}
@@ -35,7 +61,7 @@ export default function HomePage() {
             </a>
           </nav>
 
-          {/* Social (placeholders) */}
+          {/* Social (placeholder) */}
           <div className="hidden items-center gap-4 text-sm md:flex">
             <a href="https://instagram.com" className="hover:text-neutral-700">
               IG
@@ -90,13 +116,14 @@ export default function HomePage() {
             <p className="text-xs uppercase tracking-[0.2em] text-neutral-600">
               Pearlens Guest Gallery
             </p>
+            {/* Tagline removed here */}
             <p className="text-lg font-serif">
-              Your Night. Your Guests. Their Lens.
+              A modern guest gallery for weddings & events.
             </p>
             <p className="text-xs text-neutral-700">
               Discreet QR cards on each table, elegant holders, and optional
-              selfie flashlights ensure every memory is captured — even when
-              the lights are low.
+              selfie flashlights ensure every memory is captured — even when the
+              lights are low.
             </p>
             <div className="mt-4 grid grid-cols-2 gap-3 text-[0.7rem] text-neutral-700">
               <div className="rounded-2xl bg-[#f7f4ef]/70 p-3">
@@ -152,44 +179,50 @@ export default function HomePage() {
         className="border-t border-neutral-200 bg-white px-6 py-16"
       >
         <div className="mx-auto grid max-w-6xl gap-12 lg:grid-cols-[1.1fr,1fr]">
+          {/* HOW IT WORKS + TAGLINE (only here) */}
           <div>
-            <h2 className="mb-6 text-2xl font-serif">How it works</h2>
+            <h2 className="mb-2 text-2xl font-serif text-left">
+              How Pearlens works
+            </h2>
+            <p className="mb-8 text-sm sm:text-base text-neutral-700">
+              Your Night. Your Guests. Their Lens.
+            </p>
 
-            {[
-              {
-                step: "Scan",
-                desc:
-                  "Guests scan a simple QR card at their table. No app downloads — just tap and go.",
-              },
-              {
-                step: "Snap",
-                desc:
-                  "They take photos and videos from their perspective — the real, unforgettable moments.",
-              },
-              {
-                step: "Share",
-                desc:
-                  "Everything instantly flows into your private gallery, ready to download and save.",
-              },
-            ].map(({ step, desc }) => (
-              <div key={step} className="mb-4">
-                <button className="flex w-full items-center justify-between border-b border-neutral-300 pb-3 text-left">
-                  <span className="font-medium">{step}</span>
-                  <span className="text-xs">▼</span>
-                </button>
-                <p className="mt-3 text-sm text-neutral-700">{desc}</p>
-              </div>
-            ))}
+            <div className="divide-y divide-neutral-200 border-t border-neutral-200">
+              {steps.map((step) => (
+                <div key={step.id} className="border-b border-neutral-200">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setOpenStep(openStep === step.id ? null : step.id)
+                    }
+                    className="flex w-full items-center justify-between py-3 text-left"
+                  >
+                    <span className="font-medium">{step.label}</span>
+                    <span
+                      className={`text-xs transition-transform ${
+                        openStep === step.id ? "rotate-180" : ""
+                      }`}
+                    >
+                      ▼
+                    </span>
+                  </button>
+                  {openStep === step.id && (
+                    <p className="pb-4 text-sm text-neutral-700">{step.desc}</p>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
 
-          {/* CTA Copy Block – constrained width, not a full bar */}
+          {/* CTA Copy Block – tagline removed here */}
           <div className="flex items-center justify-center">
             <div className="w-full max-w-sm text-center lg:text-left">
               <p className="text-xl font-serif mb-3">
-                Your Night. Your Guests. Their Lens.
+                Capture every angle of your event.
               </p>
               <p className="text-sm text-neutral-700 mb-5">
-                Keep the aesthetic intact while capturing every moment — from
+                Keep the aesthetic intact while collecting every moment — from
                 the quiet toasts to the wild dance floor.
               </p>
               <a
@@ -373,10 +406,10 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Footer */}
+      {/* Footer – tagline removed here */}
       <footer className="border-t border-neutral-200 bg-[#f7f4ef] px-6 py-8">
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-2 text-center text-xs text-neutral-700 sm:flex-row sm:justify-between sm:text-left">
-          <p>Your Night. Your Guests. Their Lens.</p>
+          <p>Pearlens · Guest galleries for weddings & events.</p>
           <div className="space-x-3">
             <a href="mailto:hello@pearlens.com" className="underline">
               hello@pearlens.com
