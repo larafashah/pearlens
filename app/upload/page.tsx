@@ -12,9 +12,11 @@ export default function UploadPage() {
   const [eventId, setEventId] = useState("");
   const [status, setStatus] = useState("");
   const [isUploading, setIsUploading] = useState(false);
-  const [displayName, setDisplayName] = useState("");
 
-  // Load event ID from URL
+  const [displayName, setDisplayName] = useState<string | null>(null);
+  const [eventConfigLoaded, setEventConfigLoaded] = useState(false);
+
+  // 1) Read ?event= from URL
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
@@ -22,7 +24,7 @@ export default function UploadPage() {
     setEventId(ev);
   }, []);
 
-  // Load displayName from Firestore if exists
+  // 2) Load displayName from Firestore (if it exists)
   useEffect(() => {
     if (!eventId) return;
 
@@ -33,23 +35,40 @@ export default function UploadPage() {
 
         if (snap.exists()) {
           const data = snap.data();
-          setDisplayName(data.displayName || "");
+          setDisplayName(data.displayName || null);
+        } else {
+          setDisplayName(null);
         }
       } catch (err) {
         console.error("Error fetching displayName:", err);
+        setDisplayName(null);
+      } finally {
+        setEventConfigLoaded(true);
       }
     };
 
     fetchName();
   }, [eventId]);
 
+  // 3) What to show in the UI for "Event: ..."
+  const eventLabel = (() => {
+    if (!eventId) return "Loading…";               // URL not parsed yet
+    if (!eventConfigLoaded) return "Loading…";     // Still fetching config
+    if (displayName) return displayName;           // Pretty name from Firestore
+    return "Event not configured";                 // We have an eventId but no doc
+  })();
+
+  // 4) Watermark text – ONLY from displayName, never from eventId
   const getWatermark = () => {
     if (displayName) return displayName;
-    return eventId.replace(/[-_]+/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+    return "Pearlens Guest Gallery"; // neutral fallback
   };
 
-  // Draw photo inside frame + footer watermark
-  const createFramedWatermarkedBlob = (file: File, watermarkText: string) => {
+  // 5) Frame + watermark drawing
+  const createFramedWatermarkedBlob = (
+    file: File,
+    watermarkText: string
+  ) => {
     return new Promise<Blob>((resolve, reject) => {
       const img = new Image();
 
@@ -72,18 +91,23 @@ export default function UploadPage() {
         const ctx = canvas.getContext("2d");
         if (!ctx) return reject("No 2D context");
 
+        // Background
         ctx.fillStyle = "#ffffff";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+        // Photo
         ctx.drawImage(img, pad, pad, w, h);
 
+        // Divider line above footer
         ctx.strokeStyle = "#e5e5e5";
         ctx.lineWidth = 1;
+        ctx.beginPath();
         ctx.moveTo(pad, pad + h + 10);
         ctx.lineTo(canvas.width - pad, pad + h + 10);
         ctx.stroke();
 
-        ctx.font = `36px 'Alex Brush', cursive`;
+        // Watermark text – uses Alex Brush (loaded via globals.css)
+        ctx.font = `36px "Alex Brush", cursive`;
         ctx.fillStyle = "#222";
         ctx.shadowColor = "rgba(0,0,0,0.15)";
         ctx.shadowBlur = 2;
@@ -99,11 +123,11 @@ export default function UploadPage() {
       };
 
       img.onerror = reject;
-
       img.src = URL.createObjectURL(file);
     });
   };
 
+  // 6) Upload handler
   const handleFileChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -136,13 +160,19 @@ export default function UploadPage() {
     }
   };
 
+  // 7) UI
   return (
     <main className="min-h-screen flex flex-col items-center justify-center px-4 py-8 bg-gray-100">
       <section className="w-full max-w-md bg-white shadow-md p-6 rounded-xl text-center">
-        <h1 className="text-xl font-semibold mb-4">Share Your Photos 📸</h1>
+        <h1 className="text-xl font-semibold mb-4">
+          Share Your Photos <span role="img" aria-label="camera">📸</span>
+        </h1>
 
         <p className="text-sm text-gray-600 mb-2">
-          Event: <span className="font-mono">{displayName || "Loading..."}</span>
+          Event:{" "}
+          <span className="font-mono">
+            {eventLabel}
+          </span>
         </p>
 
         <p className="text-xs text-gray-500 mb-6">
