@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import Image from "next/image";
 import { ref, listAll, getDownloadURL } from "firebase/storage";
 import { storage } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
@@ -173,9 +174,21 @@ export default function GalleryPage() {
         {/* Header */}
         <header className="mb-4 md:mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div>
-            <h1 className="text-xl md:text-2xl font-semibold text-gray-900">
-              Pearlens Gallery
-            </h1>
+            <div className="flex items-center gap-3">
+              <div className="relative h-6 w-[110px] md:h-8 md:w-[140px]">
+                <Image
+                  src="/pearlens-logo.png"
+                  alt="Pearlens"
+                  fill
+                  className="object-contain"
+                  sizes="140px"
+                  priority
+                />
+              </div>
+              <h1 className="text-xl md:text-2xl font-semibold text-gray-900">
+                Gallery
+              </h1>
+            </div>
             <p className="text-sm md:text-base text-gray-700">
               Event:{" "}
               <span className="font-medium">
