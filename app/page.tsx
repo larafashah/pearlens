@@ -7,12 +7,12 @@ const steps = [
   {
     id: 1,
     label: "Scan",
-    desc: "Guests scan a minimal QR card at their table — no app downloads or accounts needed.",
+    desc: "Guests scan a minimal QR card at their table - no app downloads or accounts needed.",
   },
   {
     id: 2,
     label: "Snap",
-    desc: "They take photos and videos from their point of view and upload in seconds using their phone’s browser.",
+    desc: "They take photos and videos from their point of view and upload in seconds using their phone's browser.",
   },
   {
     id: 3,
@@ -77,7 +77,7 @@ export default function HomePage() {
             seamless guest gallery that blends into your event design.
           </p>
           <p className="mt-3 max-w-xl text-sm text-neutral-700">
-            Guests capture the moments you don&apos;t see — you wake up to one
+            Guests capture the moments you don&apos;t see - you wake up to one
             private gallery, ready to download and share.
           </p>
 
@@ -108,7 +108,7 @@ export default function HomePage() {
             </p>
             <p className="text-xs text-neutral-700">
               Discreet QR cards on each table, elegant holders, and optional
-              selfie flashlights ensure every memory is captured — even when the
+              selfie flashlights ensure every memory is captured - even when the
               lights are low.
             </p>
             <div className="mt-4 grid grid-cols-2 gap-3 text-[0.7rem] text-neutral-700">
@@ -136,7 +136,7 @@ export default function HomePage() {
             Moments we&apos;re built for
           </h2>
           <p className="mb-8 text-sm text-neutral-700 max-w-2xl">
-            We capture the in-between — the real reactions, the surprise hugs,
+            We capture the in-between - the real reactions, the surprise hugs,
             the late-night dance floor and the quiet details.
           </p>
 
@@ -149,7 +149,7 @@ export default function HomePage() {
                     {title}
                   </p>
                   <p>
-                    Guests capture moments you don&apos;t — and you receive them
+                    Guests capture moments you don&apos;t - and you receive them
                     all in one gallery.
                   </p>
                 </div>
@@ -185,7 +185,7 @@ export default function HomePage() {
                         openStep === step.id ? "rotate-180" : ""
                       }`}
                     >
-                      ▼
+                      v
                     </span>
                   </button>
                   {openStep === step.id && (
@@ -233,9 +233,9 @@ export default function HomePage() {
               </p>
               <p className="font-medium">Digital Guest Gallery</p>
               <ul className="mt-2 space-y-1 text-xs text-neutral-700">
-                <li>• Custom event upload link</li>
-                <li>• Unlimited guest uploads</li>
-                <li>• Private gallery post-event</li>
+                <li>- Custom event upload link</li>
+                <li>- Unlimited guest uploads</li>
+                <li>- Private gallery post-event</li>
               </ul>
             </div>
 
@@ -246,10 +246,10 @@ export default function HomePage() {
               </p>
               <p className="font-medium">QR Cards + Flash Accessories</p>
               <ul className="mt-2 space-y-1 text-xs text-neutral-700">
-                <li>• QR cards for each table</li>
-                <li>• Elegant table card holders</li>
-                <li>• Phone-mounted selfie flashlights</li>
-                <li>• Design matched to your event aesthetic</li>
+                <li>- QR cards for each table</li>
+                <li>- Elegant table card holders</li>
+                <li>- Phone-mounted selfie flashlights</li>
+                <li>- Design matched to your event aesthetic</li>
               </ul>
             </div>
 
@@ -260,9 +260,9 @@ export default function HomePage() {
               </p>
               <p className="font-medium">Live Projector Wall</p>
               <ul className="mt-2 space-y-1 text-xs text-neutral-700">
-                <li>• Real-time display of guest photos</li>
-                <li>• Curated stream during speeches or party</li>
-                <li>• Available with premium packages</li>
+                <li>- Real-time display of guest photos</li>
+                <li>- Curated stream during speeches or party</li>
+                <li>- Available with premium packages</li>
               </ul>
             </div>
           </div>
@@ -275,9 +275,9 @@ export default function HomePage() {
         className="border-t border-neutral-200 bg-[#f7f4ef] px-6 py-16"
       >
         <div className="mx-auto max-w-4xl">
-          <h2 className="mb-6 text-2xl font-serif">Let’s capture every moment</h2>
+          <h2 className="mb-6 text-2xl font-serif">Let&apos;s capture every moment</h2>
           <p className="mb-8 text-sm text-neutral-700">
-            Tell us a little about your event — we’ll reach out with a custom
+            Tell us a little about your event - we&apos;ll reach out with a custom
             quote.
           </p>
 
@@ -386,12 +386,12 @@ export default function HomePage() {
       {/* FOOTER */}
       <footer className="border-t border-neutral-200 bg-[#f7f4ef] px-6 py-8">
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-2 text-center text-xs text-neutral-700 sm:flex-row sm:justify-between sm:text-left">
-          <p>Pearlens · Guest galleries for weddings & events.</p>
+          <p>Pearlens - Guest galleries for weddings & events.</p>
           <div className="space-x-3">
             <a href="mailto:hello@pearlens.com" className="underline">
               hello@pearlens.com
             </a>
-            <span>·</span>
+            <span>-</span>
             <span>(862) 686-3964</span>
           </div>
         </div>

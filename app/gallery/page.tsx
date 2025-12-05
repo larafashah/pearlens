@@ -76,12 +76,17 @@ export default function GalleryPage() {
         const folderRef = ref(storage, `events/${eventId}/uploads`);
         const result = await listAll(folderRef);
 
+        const sortedItems = result.items
+          .slice()
+          .sort((a, b) =>
+            a.name.localeCompare(b.name, undefined, { numeric: true })
+          );
+
         const urls = await Promise.all(
-          result.items.map((item) => getDownloadURL(item))
+          sortedItems.map((item) => getDownloadURL(item))
         );
 
-        const sorted = urls.slice().sort();
-        setPhotos(sorted);
+        setPhotos(urls);
       } catch (err: any) {
         console.error("[GALLERY LOAD ERROR]", err);
         setError("Unable to load photos for this event.");
@@ -217,7 +222,7 @@ export default function GalleryPage() {
 
         {/* Loading / error */}
         {loading && (
-          <p className="text-sm text-gray-700">Loading photos…</p>
+          <p className="text-sm text-gray-700">Loading photos...</p>
         )}
         {error && (
           <p className="text-sm text-red-600 mb-4">{error}</p>
@@ -275,7 +280,7 @@ export default function GalleryPage() {
                 onClick={goPrev}
                 className="px-3 py-1 rounded-full bg-white/10 hover:bg-white/20"
               >
-                ◀ Previous
+                Previous
               </button>
               <span>
                 {selectedIndex + 1} / {photos.length}
@@ -284,7 +289,7 @@ export default function GalleryPage() {
                 onClick={goNext}
                 className="px-3 py-1 rounded-full bg-white/10 hover:bg-white/20"
               >
-                Next ▶
+                Next
               </button>
             </div>
           </div>
@@ -295,7 +300,7 @@ export default function GalleryPage() {
       {isProjector && photos.length > 0 && selectedIndex !== null && (
         <div className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center">
           <div className="absolute top-3 left-4 text-xs md:text-sm text-gray-300">
-            {prettyEventLabel} — {selectedIndex + 1} / {photos.length}
+            {prettyEventLabel} - {selectedIndex + 1} / {photos.length}
           </div>
 
           <div className="max-w-[95vw] max-h-[85vh] flex items-center justify-center">
@@ -317,13 +322,13 @@ export default function GalleryPage() {
               onClick={goPrev}
               className="px-3 py-2 rounded-full bg-white/10 hover:bg-white/20"
             >
-              ◀ Previous
+              Previous
             </button>
             <button
               onClick={goNext}
               className="px-3 py-2 rounded-full bg-white/10 hover:bg-white/20"
             >
-              Next ▶
+              Next
             </button>
           </div>
 

@@ -8,12 +8,26 @@ import { ref, uploadBytes } from "firebase/storage";
 import { storage, db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 
+// Ensure the Alex Brush font is loaded before drawing to canvas
+let alexBrushFontPromise: Promise<void> | null = null;
+const ensureAlexBrushFont = () => {
+  if (typeof document === "undefined") return Promise.resolve();
+  if (!("fonts" in document)) return Promise.resolve();
+  if (alexBrushFontPromise) return alexBrushFontPromise;
+  alexBrushFontPromise = document.fonts
+    .load(`36px "Alex Brush"`)
+    .then(() => undefined)
+    .catch(() => undefined);
+  return alexBrushFontPromise;
+};
+
 export default function UploadPage() {
   const [eventId, setEventId] = useState("");
   const [status, setStatus] = useState("");
   const [isUploading, setIsUploading] = useState(false);
 
   const [displayName, setDisplayName] = useState<string | null>(null);
+  const [eventExists, setEventExists] = useState<boolean | null>(null);
   const [eventConfigLoaded, setEventConfigLoaded] = useState(false);
 
   // 1) Read ?event= from URL
@@ -22,6 +36,11 @@ export default function UploadPage() {
     const params = new URLSearchParams(window.location.search);
     const ev = params.get("event") || "";
     setEventId(ev);
+
+    // Reset event state whenever eventId changes
+    setDisplayName(null);
+    setEventExists(null);
+    setEventConfigLoaded(false);
   }, []);
 
   // 2) Load displayName from Firestore (if it exists)
@@ -36,12 +55,15 @@ export default function UploadPage() {
         if (snap.exists()) {
           const data = snap.data();
           setDisplayName(data.displayName || null);
+          setEventExists(true);
         } else {
           setDisplayName(null);
+          setEventExists(false);
         }
       } catch (err) {
         console.error("Error fetching displayName:", err);
         setDisplayName(null);
+        setEventExists(false);
       } finally {
         setEventConfigLoaded(true);
       }
@@ -52,27 +74,32 @@ export default function UploadPage() {
 
   // 3) What to show in the UI for "Event: ..."
   const eventLabel = (() => {
-    if (!eventId) return "Loading…";               // URL not parsed yet
-    if (!eventConfigLoaded) return "Loading…";     // Still fetching config
-    if (displayName) return displayName;           // Pretty name from Firestore
-    return "Event not configured";                 // We have an eventId but no doc
+    if (!eventId) return "Loading...";           // URL not parsed yet
+    if (!eventConfigLoaded) return "Loading..."; // Still fetching config
+    if (eventExists === false) return "Event not configured";
+    if (displayName) return displayName;         // Pretty name from Firestore
+    return eventId;                              // Show raw ID if no display name
   })();
 
-  // 4) Watermark text – ONLY from displayName, never from eventId
+  // 4) Watermark text - ONLY from displayName, never from eventId
   const getWatermark = () => {
     if (displayName) return displayName;
     return "Pearlens Guest Gallery"; // neutral fallback
   };
 
   // 5) Frame + watermark drawing
-  const createFramedWatermarkedBlob = (
+  const createFramedWatermarkedBlob = async (
     file: File,
     watermarkText: string
   ) => {
+    await ensureAlexBrushFont();
+
     return new Promise<Blob>((resolve, reject) => {
       const img = new Image();
+      const objectUrl = URL.createObjectURL(file);
 
       img.onload = () => {
+        URL.revokeObjectURL(objectUrl);
         const maxWidth = 1600;
         let w = img.width;
         let h = img.height;
@@ -106,7 +133,7 @@ export default function UploadPage() {
         ctx.lineTo(canvas.width - pad, pad + h + 10);
         ctx.stroke();
 
-        // Watermark text – uses Alex Brush (loaded via globals.css)
+        // Watermark text uses Alex Brush (loaded via globals.css)
         ctx.font = `36px "Alex Brush", cursive`;
         ctx.fillStyle = "#222";
         ctx.shadowColor = "rgba(0,0,0,0.15)";
@@ -122,8 +149,11 @@ export default function UploadPage() {
         canvas.toBlob((blob) => resolve(blob!), "image/jpeg", 0.9);
       };
 
-      img.onerror = reject;
-      img.src = URL.createObjectURL(file);
+      img.onerror = (err) => {
+        URL.revokeObjectURL(objectUrl);
+        reject(err);
+      };
+      img.src = objectUrl;
     });
   };
 
@@ -134,6 +164,16 @@ export default function UploadPage() {
 
     if (!eventId) {
       setStatus("Missing event ID. Scan the right QR code.");
+      return;
+    }
+
+    if (!eventConfigLoaded) {
+      setStatus("Validating event link. Please try again in a moment.");
+      return;
+    }
+
+    if (eventExists === false) {
+      setStatus("This event link is not configured. Please check with your host.");
       return;
     }
 
@@ -150,10 +190,10 @@ export default function UploadPage() {
       const fileRef = ref(storage, path);
       await uploadBytes(fileRef, blob);
 
-      setStatus("✅ Uploaded! Take another.");
+      setStatus("Uploaded! Take another.");
     } catch (err) {
       console.error(err);
-      setStatus("❌ Upload failed");
+      setStatus("Upload failed. Please try again.");
     } finally {
       setIsUploading(false);
       e.target.value = "";
@@ -164,9 +204,7 @@ export default function UploadPage() {
   return (
     <main className="min-h-screen flex flex-col items-center justify-center px-4 py-8 bg-gray-100">
       <section className="w-full max-w-md bg-white shadow-md p-6 rounded-xl text-center">
-        <h1 className="text-xl font-semibold mb-4">
-          Share Your Photos <span role="img" aria-label="camera">📸</span>
-        </h1>
+        <h1 className="text-xl font-semibold mb-4">Share Your Photos</h1>
 
         <p className="text-sm text-gray-600 mb-2">
           Event:{" "}
@@ -203,3 +241,4 @@ export default function UploadPage() {
     </main>
   );
 }
+
