@@ -187,7 +187,7 @@ export default function HomePage() {
                     onClick={() =>
                       setOpenStep(openStep === step.id ? null : step.id)
                     }
-                    className="flex w-full items-center justify-between py-3 text-left"
+                    className="flex w-full items-center justify-center gap-2 py-3 text-center"
                   >
                     <span className="font-medium">{step.label}</span>
                     <span
