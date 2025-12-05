@@ -21,6 +21,21 @@ const steps = [
   },
 ];
 
+const moments = [
+  {
+    title: "Wedding Receptions",
+    desc: "Dance-floor candids, the laughter between courses, and the hugs you miss while you greet everyone.",
+  },
+  {
+    title: "Engagement Parties",
+    desc: "Champagne toasts, the ring reveal, and the reactions from friends seeing you two together.",
+  },
+  {
+    title: "Private Events",
+    desc: "Anniversaries, milestone birthdays, and intimate dinners captured without a camera crew.",
+  },
+];
+
 export default function HomePage() {
   const [openStep, setOpenStep] = useState<number | null>(1);
 
@@ -141,20 +156,15 @@ export default function HomePage() {
           </p>
 
           <div className="grid gap-6 md:grid-cols-3 text-sm text-neutral-800">
-            {["Wedding Receptions", "Engagement Parties", "Private Events"].map(
-              (title, i) => (
-                <div key={i} className="space-y-2 rounded-2xl bg-[#f7f4ef] p-4">
-                  <div className="aspect-[4/3] rounded-xl bg-[#e3d7c7]" />
-                  <p className="mt-3 text-xs font-semibold uppercase tracking-[0.18em] text-neutral-600">
-                    {title}
-                  </p>
-                  <p>
-                    Guests capture moments you don&apos;t - and you receive them
-                    all in one gallery.
-                  </p>
-                </div>
-              )
-            )}
+            {moments.map((item) => (
+              <div key={item.title} className="space-y-2 rounded-2xl bg-[#f7f4ef] p-4">
+                <div className="aspect-[4/3] rounded-xl bg-[#e3d7c7]" />
+                <p className="mt-3 text-xs font-semibold uppercase tracking-[0.18em] text-neutral-600">
+                  {item.title}
+                </p>
+                <p>{item.desc}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
