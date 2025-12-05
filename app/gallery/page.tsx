@@ -279,10 +279,14 @@ export default function GalleryPage() {
                 onClick={() => handleThumbClick(index)}
                 className="relative aspect-square overflow-hidden rounded-lg border border-gray-200 bg-gray-50"
               >
-                <img
+                <Image
                   src={url}
                   alt={`Photo ${index + 1}`}
-                  className="h-full w-full object-cover"
+                  fill
+                  sizes="(min-width: 1024px) 180px, (min-width: 768px) 160px, 32vw"
+                  className="object-cover"
+                  unoptimized
+                  priority={index < 6}
                 />
               </button>
             ))}
@@ -311,21 +315,26 @@ export default function GalleryPage() {
       {/* Normal viewer (thumbnail click) */}
       {selectedIndex !== null && !isProjector && (
         <div className="fixed inset-0 z-40 bg-black/80 flex items-center justify-center px-4">
-          <div className="relative max-w-4xl w-full max-h-[90vh] flex flex-col">
-            <button
-              onClick={handleCloseViewer}
-              className="absolute top-3 right-3 rounded-full bg-black/60 px-3 py-1 text-xs text-white"
-            >
-              Close
-            </button>
+            <div className="relative max-w-4xl w-full max-h-[90vh] flex flex-col">
+              <button
+                onClick={handleCloseViewer}
+                className="absolute top-3 right-3 rounded-full bg-black/60 px-3 py-1 text-xs text-white"
+              >
+                Close
+              </button>
 
-            <div className="flex-1 flex items-center justify-center">
-              <img
-                src={photos[selectedIndex]}
-                alt={`Photo ${selectedIndex + 1}`}
-                className="max-h-[80vh] max-w-full object-contain rounded-lg"
-              />
-            </div>
+              <div className="flex-1 flex items-center justify-center">
+                <div className="relative w-full h-[80vh]">
+                  <Image
+                    src={photos[selectedIndex]}
+                    alt={`Photo ${selectedIndex + 1}`}
+                    fill
+                    sizes="(min-width: 1024px) 1024px, 90vw"
+                    className="object-contain rounded-lg"
+                    unoptimized
+                  />
+                </div>
+              </div>
 
             <div className="mt-3 flex items-center justify-between text-white text-xs md:text-sm">
               <button
@@ -356,11 +365,16 @@ export default function GalleryPage() {
           </div>
 
           <div className="max-w-[95vw] max-h-[85vh] flex items-center justify-center">
-            <img
-              src={photos[selectedIndex]}
-              alt={`Photo ${selectedIndex + 1}`}
-              className="max-h-[85vh] max-w-[95vw] object-contain"
-            />
+            <div className="relative w-[95vw] h-[85vh]">
+              <Image
+                src={photos[selectedIndex]}
+                alt={`Photo ${selectedIndex + 1}`}
+                fill
+                sizes="95vw"
+                className="object-contain"
+                unoptimized
+              />
+            </div>
           </div>
 
           <div className="mt-4 flex items-center gap-3 text-xs md:text-sm text-gray-100">

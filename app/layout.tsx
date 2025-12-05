@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-page-custom-font */
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -13,12 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Pearlens – Modern Guest Galleries",
-  description:
-    "A modern, elegant guest photo experience for weddings & events. Guests scan, snap, and share — you wake up to every memory in one gallery.",
-  icons: {
-    icon: "/favicon.ico",
-  },
+  title: "PearLens",
+  description: "Capture and share memories - effortlessly",
 };
 
 export default function RootLayout({
@@ -28,8 +25,16 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        {/* Ensure Alex Brush font loads before canvas watermark */}
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Alex+Brush&display=swap"
+        />
+      </head>
+
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-[#f9f5f2] text-slate-900`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[var(--background)] text-[var(--foreground)]`}
       >
         {children}
       </body>
