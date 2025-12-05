@@ -1,12 +1,10 @@
-/* eslint-disable */
-/* prettier-ignore */
-// @ts-nocheck
 "use client";
 
 import { useState, useEffect } from "react";
 import { ref, uploadBytes } from "firebase/storage";
 import { storage, db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
+import type { ChangeEvent } from "react";
 
 // Ensure the Alex Brush font is loaded before drawing to canvas
 let alexBrushFontPromise: Promise<void> | null = null;
@@ -25,10 +23,15 @@ export default function UploadPage() {
   const [eventId, setEventId] = useState("");
   const [status, setStatus] = useState("");
   const [isUploading, setIsUploading] = useState(false);
+  const [watermarkReady, setWatermarkReady] = useState(false);
 
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [eventExists, setEventExists] = useState<boolean | null>(null);
   const [eventConfigLoaded, setEventConfigLoaded] = useState(false);
+
+  const requiredPasscode = process.env.NEXT_PUBLIC_UPLOAD_PASSCODE;
+  const [passcodeInput, setPasscodeInput] = useState("");
+  const passcodeOk = !requiredPasscode || passcodeInput.trim() === requiredPasscode;
 
   // 1) Read ?event= from URL
   useEffect(() => {
@@ -71,6 +74,11 @@ export default function UploadPage() {
 
     fetchName();
   }, [eventId]);
+
+  // Preload watermark font
+  useEffect(() => {
+    ensureAlexBrushFont().then(() => setWatermarkReady(true));
+  }, []);
 
   // 3) What to show in the UI for "Event: ..."
   const eventLabel = (() => {
@@ -158,7 +166,7 @@ export default function UploadPage() {
   };
 
   // 6) Upload handler
-  const handleFileChange = async (e) => {
+  const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -177,8 +185,13 @@ export default function UploadPage() {
       return;
     }
 
+    if (!passcodeOk) {
+      setStatus("Enter the host code to upload.");
+      return;
+    }
+
     setIsUploading(true);
-    setStatus("Uploading...");
+    setStatus(watermarkReady ? "Uploading..." : "Preparing watermark...");
 
     try {
       const watermark = getWatermark();
@@ -217,6 +230,26 @@ export default function UploadPage() {
           Snap or choose a photo. It uploads instantly!
         </p>
 
+        {requiredPasscode && (
+          <div className="mb-4 text-left">
+            <label className="block text-xs font-medium text-gray-600 mb-1">
+              Host code
+            </label>
+            <input
+              type="password"
+              value={passcodeInput}
+              onChange={(ev) => setPasscodeInput(ev.target.value)}
+              className="w-full rounded border border-gray-300 px-3 py-2 text-sm outline-none focus:border-black"
+              placeholder="Enter code"
+            />
+            {!passcodeOk && (
+              <p className="mt-1 text-xs text-red-600">
+                Enter the host-provided code to upload.
+              </p>
+            )}
+          </div>
+        )}
+
         <input
           id="file-input"
           type="file"
@@ -241,4 +274,3 @@ export default function UploadPage() {
     </main>
   );
 }
-

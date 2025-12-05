@@ -1,9 +1,6 @@
-/* eslint-disable */
-/* prettier-ignore */
-// @ts-nocheck
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { ref, listAll, getDownloadURL } from "firebase/storage";
 import { storage } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
@@ -14,6 +11,7 @@ export default function GalleryPage() {
   const [photos, setPhotos] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
@@ -66,37 +64,37 @@ export default function GalleryPage() {
   }, [eventId]);
 
   // Load images from Firebase Storage
-  useEffect(() => {
+  const loadPhotos = useCallback(async () => {
     if (!eventId) return;
+    setError(null);
+    setLoading(true);
+    try {
+      const folderRef = ref(storage, `events/${eventId}/uploads`);
+      const result = await listAll(folderRef);
 
-    const load = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const folderRef = ref(storage, `events/${eventId}/uploads`);
-        const result = await listAll(folderRef);
-
-        const sortedItems = result.items
-          .slice()
-          .sort((a, b) =>
-            a.name.localeCompare(b.name, undefined, { numeric: true })
-          );
-
-        const urls = await Promise.all(
-          sortedItems.map((item) => getDownloadURL(item))
+      const sortedItems = result.items
+        .slice()
+        .sort((a, b) =>
+          a.name.localeCompare(b.name, undefined, { numeric: true })
         );
 
-        setPhotos(urls);
-      } catch (err: any) {
-        console.error("[GALLERY LOAD ERROR]", err);
-        setError("Unable to load photos for this event.");
-      } finally {
-        setLoading(false);
-      }
-    };
+      const urls = await Promise.all(
+        sortedItems.map((item) => getDownloadURL(item))
+      );
 
-    load();
+      setPhotos(urls);
+    } catch (err) {
+      console.error("[GALLERY LOAD ERROR]", err);
+      setError("Unable to load photos for this event.");
+    } finally {
+      setLoading(false);
+      setIsRefreshing(false);
+    }
   }, [eventId]);
+
+  useEffect(() => {
+    loadPhotos();
+  }, [loadPhotos]);
 
   // Auto-start projector if ?projector=1 and allowed and photos are loaded
   useEffect(() => {
@@ -150,6 +148,11 @@ export default function GalleryPage() {
     if (!projectorAllowed || photos.length === 0) return;
     setSelectedIndex(0);
     setIsProjector(true);
+  };
+
+  const refresh = () => {
+    setIsRefreshing(true);
+    loadPhotos();
   };
 
   const stopProjector = () => {
@@ -221,11 +224,36 @@ export default function GalleryPage() {
         </header>
 
         {/* Loading / error */}
-        {loading && (
-          <p className="text-sm text-gray-700">Loading photos...</p>
+        {(loading || isRefreshing) && (
+          <div className="text-sm text-gray-700 mb-4">Loading photos...</div>
         )}
         {error && (
-          <p className="text-sm text-red-600 mb-4">{error}</p>
+          <div className="flex items-center justify-between mb-4 text-sm text-red-600">
+            <span>{error}</span>
+            <button
+              type="button"
+              onClick={refresh}
+              className="rounded bg-red-50 px-3 py-1 text-red-700"
+            >
+              Retry
+            </button>
+          </div>
+        )}
+        {!error && !loading && (
+          <div className="mb-4 flex justify-end">
+            <button
+              type="button"
+              onClick={refresh}
+              disabled={isRefreshing}
+              className={`text-xs rounded-full px-3 py-1 border ${
+                isRefreshing
+                  ? "border-gray-200 text-gray-400 cursor-not-allowed"
+                  : "border-gray-300 text-gray-700 hover:border-gray-500"
+              }`}
+            >
+              {isRefreshing ? "Refreshing..." : "Refresh"}
+            </button>
+          </div>
         )}
 
         {/* Grid */}
@@ -244,6 +272,17 @@ export default function GalleryPage() {
                   className="h-full w-full object-cover"
                 />
               </button>
+            ))}
+          </div>
+        )}
+
+        {loading && photos.length === 0 && (
+          <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 md:gap-3">
+            {Array.from({ length: 9 }).map((_, idx) => (
+              <div
+                key={idx}
+                className="aspect-square rounded-lg bg-gray-100 animate-pulse"
+              />
             ))}
           </div>
         )}
