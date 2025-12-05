@@ -13,8 +13,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "PearLens",
-  description: "Capture and share memories - effortlessly",
+  title: "Pearlens – Modern Guest Galleries",
+  description:
+    "A modern, elegant guest photo experience for weddings & events. Guests scan, snap, and share — you wake up to every memory in one gallery.",
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({
@@ -25,7 +29,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-[#f9f5f2] text-slate-900`}
       >
         {children}
       </body>

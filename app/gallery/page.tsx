@@ -21,16 +21,22 @@ export default function GalleryPage() {
   const [isProjector, setIsProjector] = useState(false);
   const [projectorSeconds] = useState(8);
   const [projectorAllowed, setProjectorAllowed] = useState(false);
+  const [autoProjectorRequested, setAutoProjectorRequested] = useState(false);
 
   // Optional: display name from event doc later if you want
   const [eventDisplayName, setEventDisplayName] = useState<string | null>(null);
 
-  // Read ?event= from URL
+  // Read ?event= and ?projector= from URL
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
     const id = params.get("event") || "";
     setEventId(id);
+
+    const proj = params.get("projector");
+    if (proj === "1" || proj === "true") {
+      setAutoProjectorRequested(true);
+    }
   }, []);
 
   // Load event config from Firestore (projectorEnabled, displayName)
@@ -86,6 +92,16 @@ export default function GalleryPage() {
 
     load();
   }, [eventId]);
+
+  // Auto-start projector if ?projector=1 and allowed and photos are loaded
+  useEffect(() => {
+    if (!autoProjectorRequested) return;
+    if (!projectorAllowed) return;
+    if (photos.length === 0) return;
+
+    setSelectedIndex(0);
+    setIsProjector(true);
+  }, [autoProjectorRequested, projectorAllowed, photos.length]);
 
   // Projector auto-advance
   useEffect(() => {
@@ -184,6 +200,12 @@ export default function GalleryPage() {
                   Use this on a projector or big screen. Images will auto-advance
                   every {projectorSeconds} seconds. You can also use Next / Previous.
                 </p>
+                {autoProjectorRequested && !projectorAllowed && (
+                  <p className="text-[11px] text-red-500 text-right">
+                    Projector URL requested, but projector is not enabled for this
+                    event.
+                  </p>
+                )}
               </>
             ) : (
               <p className="text-[11px] md:text-xs text-gray-400 text-right max-w-xs">
@@ -287,7 +309,7 @@ export default function GalleryPage() {
           <div className="mt-4 flex items-center gap-3 text-xs md:text-sm text-gray-100">
             <button
               onClick={stopProjector}
-              className="px-4 py-2 rounded-full bg.white/10 hover:bg-white/20 bg-white/10"
+              className="px-4 py-2 rounded-full bg-white/10 hover:bg-white/20"
             >
               Exit projector
             </button>
