@@ -187,9 +187,11 @@ export default function HomePage() {
                     onClick={() =>
                       setOpenStep(openStep === step.id ? null : step.id)
                     }
-                    className="flex w-full items-center justify-between py-3 text-left"
+                    className="flex w-full items-center justify-between py-3"
                   >
-                    <span className="font-medium">{step.label}</span>
+                    <span className="flex-1 text-center font-medium">
+                      {step.label}
+                    </span>
                     <span
                       className={`text-xs transition-transform ${
                         openStep === step.id ? "rotate-180" : ""
