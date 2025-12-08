@@ -61,3 +61,34 @@ body::before {
     linear-gradient(135deg, #f9f5f2 0%, #f3e8dd 60%, #f9f5f2 100%);
   filter: blur(0px);
 }
+
+/* Subtle sparkling layer */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    radial-gradient(1.5px 1.5px at 20% 30%, rgba(255, 215, 170, 0.4), transparent),
+    radial-gradient(1px 1px at 60% 20%, rgba(255, 255, 255, 0.35), transparent),
+    radial-gradient(1.2px 1.2px at 80% 70%, rgba(223, 189, 150, 0.45), transparent),
+    radial-gradient(1px 1px at 35% 80%, rgba(255, 225, 190, 0.35), transparent);
+  animation: sparkleShift 16s ease-in-out infinite alternate;
+  mix-blend-mode: screen;
+}
+
+@keyframes sparkleShift {
+  0% {
+    transform: translateY(0) translateX(0);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translateY(-8px) translateX(6px);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(8px) translateX(-6px);
+    opacity: 0.9;
+  }
+}
