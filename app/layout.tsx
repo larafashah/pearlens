@@ -36,6 +36,24 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[var(--background)] text-[var(--foreground)]`}
       >
+        {/* Optional luxe video backdrop (set NEXT_PUBLIC_BG_VIDEO_URL) */}
+        {process.env.NEXT_PUBLIC_BG_VIDEO_URL && (
+          <div className="bg-video">
+            <video
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="auto"
+              aria-label="Background video"
+            >
+              <source
+                src={process.env.NEXT_PUBLIC_BG_VIDEO_URL}
+                type="video/mp4"
+              />
+            </video>
+          </div>
+        )}
         {children}
       </body>
     </html>

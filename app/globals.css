@@ -83,6 +83,22 @@ body::after {
   will-change: transform, background-position;
 }
 
+/* Fullscreen background video */
+.bg-video {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.bg-video video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: brightness(0.9);
+}
+
 @keyframes sparkleShift {
   0% {
     transform: translateY(0) translateX(0);
