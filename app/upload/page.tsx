@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ref, uploadBytes } from "firebase/storage";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { storage, db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import type { ChangeEvent } from "react";
@@ -24,6 +24,10 @@ export default function UploadPage() {
   const [status, setStatus] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [watermarkReady, setWatermarkReady] = useState(false);
+  const [lastPhotoUrl, setLastPhotoUrl] = useState<string | null>(null);
+  const [phone, setPhone] = useState("");
+  const [smsStatus, setSmsStatus] = useState<"idle" | "sending" | "success" | "error">("idle");
+  const [smsMessage, setSmsMessage] = useState("");
 
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [eventExists, setEventExists] = useState<boolean | null>(null);
@@ -203,13 +207,40 @@ export default function UploadPage() {
       const fileRef = ref(storage, path);
       await uploadBytes(fileRef, blob);
 
+      const downloadUrl = await getDownloadURL(fileRef);
+      setLastPhotoUrl(downloadUrl);
       setStatus("Uploaded! Take another.");
     } catch (err) {
       console.error(err);
       setStatus("Upload failed. Please try again.");
+      setLastPhotoUrl(null);
     } finally {
       setIsUploading(false);
       e.target.value = "";
+    }
+  };
+
+  const handleSendText = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!lastPhotoUrl) return;
+    setSmsStatus("sending");
+    setSmsMessage("Sending your photo...");
+
+    try {
+      const res = await fetch("/api/send-text", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone, photoUrl: lastPhotoUrl }),
+      });
+
+      if (!res.ok) throw new Error("Failed");
+      setSmsStatus("success");
+      setSmsMessage("Text sent! Check your phone.");
+      setPhone("");
+    } catch (err) {
+      console.error(err);
+      setSmsStatus("error");
+      setSmsMessage("Could not send the text. Please try again.");
     }
   };
 
@@ -270,6 +301,41 @@ export default function UploadPage() {
         </label>
 
         {status && <p className="mt-4 text-sm">{status}</p>}
+
+        {lastPhotoUrl && (
+          <div className="mt-6 border-t pt-6 text-left">
+            <p className="text-sm font-medium mb-2">Text this photo to yourself</p>
+            <p className="text-xs text-gray-600 mb-3">
+              Enter your number to receive the watermarked photo. Message/data rates may apply.
+            </p>
+            <form className="space-y-3" onSubmit={handleSendText}>
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="+1..."
+                required
+                className="w-full rounded border border-gray-300 px-3 py-2 text-sm outline-none focus:border-black"
+              />
+              <button
+                type="submit"
+                disabled={smsStatus === "sending"}
+                className="w-full rounded-lg bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-900 transition-colors disabled:opacity-70"
+              >
+                {smsStatus === "sending" ? "Sending..." : "Text me this photo"}
+              </button>
+              {smsMessage && (
+                <p
+                  className={`text-sm ${
+                    smsStatus === "error" ? "text-red-600" : "text-green-700"
+                  }`}
+                >
+                  {smsMessage}
+                </p>
+              )}
+            </form>
+          </div>
+        )}
       </section>
     </main>
   );

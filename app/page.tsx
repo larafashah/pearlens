@@ -38,6 +38,74 @@ const moments = [
 
 export default function HomePage() {
   const [openStep, setOpenStep] = useState<number | null>(1);
+  const [formStatus, setFormStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
+  const [formMessage, setFormMessage] = useState("");
+  const [smsStatus, setSmsStatus] = useState<"idle" | "sending" | "success" | "error">("idle");
+  const [smsMessage, setSmsMessage] = useState("");
+  const [smsForm, setSmsForm] = useState({ phone: "", photoUrl: "" });
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setFormStatus("submitting");
+    setFormMessage("Sending your inquiry...");
+
+    const formData = new FormData(event.currentTarget);
+
+    // Honeypot check
+    if ((formData.get("website") as string) ?? "") {
+      setFormStatus("success");
+      setFormMessage("Thanks!"); // Silently ignore bots
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/inquiry", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error("Request failed");
+      }
+
+      setFormStatus("success");
+      setFormMessage("Thanks! We received your inquiry and will reply soon.");
+      event.currentTarget.reset();
+    } catch (err) {
+      console.error(err);
+      setFormStatus("error");
+      setFormMessage("Something went wrong. Please try again.");
+    }
+  };
+
+  const handleSendText = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setSmsStatus("sending");
+    setSmsMessage("Sending your photo...");
+
+    try {
+      const response = await fetch("/api/send-text", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          phone: smsForm.phone,
+          photoUrl: smsForm.photoUrl,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Request failed");
+      }
+
+      setSmsStatus("success");
+      setSmsMessage("Text sent! Check your phone.");
+      setSmsForm({ phone: "", photoUrl: "" });
+    } catch (err) {
+      console.error(err);
+      setSmsStatus("error");
+      setSmsMessage("Could not send the text. Please try again.");
+    }
+  };
 
   return (
     <main className="min-h-screen bg-[#f7f4ef] text-[#111] flex flex-col">
@@ -225,6 +293,80 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* TEXT DELIVERY */}
+      <section className="border-t border-neutral-200 bg-[#f7f4ef] px-6 py-16">
+        <div className="mx-auto max-w-4xl">
+          <div className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-neutral-200 sm:p-8">
+            <p className="text-xs uppercase tracking-[0.2em] text-neutral-600">
+              After upload
+            </p>
+            <h2 className="mt-2 text-2xl font-serif">
+              Text guests their watermarked photo
+            </h2>
+            <p className="mt-2 text-sm text-neutral-700 max-w-2xl">
+              Once a guest finishes uploading, auto-fill their phone number and the final
+              watermarked image URL here to send it via SMS/MMS. This form wires into Twilio so
+              you can drop it into the upload success screen.
+            </p>
+
+            <form className="mt-6 space-y-4 text-sm" onSubmit={handleSendText}>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label className="mb-1 block text-xs font-medium uppercase tracking-[0.15em] text-neutral-600">
+                    Guest phone (E.164)
+                  </label>
+                  <input
+                    type="tel"
+                    name="phone"
+                    placeholder="+15555550123"
+                    value={smsForm.phone}
+                    onChange={(e) => setSmsForm((prev) => ({ ...prev, phone: e.target.value }))}
+                    required
+                    className="w-full border border-neutral-300 bg-white px-3 py-2 outline-none focus:border-black"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-xs font-medium uppercase tracking-[0.15em] text-neutral-600">
+                    Watermarked photo URL
+                  </label>
+                  <input
+                    name="photoUrl"
+                    placeholder="https://cdn.yoursite.com/event/photo-watermarked.jpg"
+                    value={smsForm.photoUrl}
+                    onChange={(e) => setSmsForm((prev) => ({ ...prev, photoUrl: e.target.value }))}
+                    required
+                    className="w-full border border-neutral-300 bg-white px-3 py-2 outline-none focus:border-black"
+                  />
+                </div>
+              </div>
+
+              <p className="text-xs text-neutral-600">
+                In production, prefill these values after your upload + watermark step. Message/data rates may apply.
+              </p>
+
+              <button
+                type="submit"
+                disabled={smsStatus === "sending"}
+                className="inline-flex rounded-full bg-black px-8 py-3 text-sm font-medium text-white hover:bg-neutral-900 transition-colors disabled:opacity-70"
+              >
+                {smsStatus === "sending" ? "Sending..." : "Text this photo"}
+              </button>
+
+              {smsMessage && (
+                <p
+                  className={`text-sm ${
+                    smsStatus === "error" ? "text-red-600" : "text-green-700"
+                  }`}
+                >
+                  {smsMessage}
+                </p>
+              )}
+            </form>
+          </div>
+        </div>
+      </section>
+
       {/* PRICING */}
       <section
         id="pricing"
@@ -293,12 +435,7 @@ export default function HomePage() {
             quote.
           </p>
 
-          <form
-            className="space-y-6 text-sm"
-            action="mailto:hello@pearlens.com"
-            method="post"
-            encType="text/plain"
-          >
+          <form className="space-y-6 text-sm" onSubmit={handleSubmit}>
             <div className="grid gap-4 md:grid-cols-2">
               {["First Name", "Last Name"].map((label) => (
                 <div key={label}>
@@ -373,6 +510,14 @@ export default function HomePage() {
               </div>
             </div>
 
+            {/* Honeypot */}
+            <div className="hidden">
+              <label>
+                Do not fill
+                <input name="website" type="text" />
+              </label>
+            </div>
+
             <div>
               <label className="mb-1 block text-xs font-medium uppercase tracking-[0.15em] text-neutral-600">
                 Special Notes
@@ -387,10 +532,21 @@ export default function HomePage() {
 
             <button
               type="submit"
-              className="mt-4 inline-flex rounded-full bg-black px-8 py-3 text-sm font-medium text-white hover:bg-neutral-900 transition-colors"
+              disabled={formStatus === "submitting"}
+              className="mt-4 inline-flex rounded-full bg-black px-8 py-3 text-sm font-medium text-white hover:bg-neutral-900 transition-colors disabled:opacity-70"
             >
-              Submit Inquiry
+              {formStatus === "submitting" ? "Sending..." : "Submit Inquiry"}
             </button>
+
+            {formMessage && (
+              <p
+                className={`text-sm ${
+                  formStatus === "error" ? "text-red-600" : "text-green-700"
+                }`}
+              >
+                {formMessage}
+              </p>
+            )}
           </form>
         </div>
       </section>
