@@ -46,10 +46,11 @@ export default function HomePage() {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const form = event.currentTarget;
     setFormStatus("submitting");
     setFormMessage("Sending your inquiry...");
 
-    const formData = new FormData(event.currentTarget);
+    const formData = new FormData(form);
 
     // Honeypot check
     if ((formData.get("website") as string) ?? "") {
@@ -70,7 +71,7 @@ export default function HomePage() {
 
       setFormStatus("success");
       setFormMessage("Thanks! We received your inquiry and will reply soon.");
-      event.currentTarget.reset();
+      form.reset();
     } catch (err) {
       console.error(err);
       setFormStatus("error");
