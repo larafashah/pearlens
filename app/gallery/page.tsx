@@ -97,6 +97,18 @@ export default function GalleryPage() {
     loadPhotos();
   }, [loadPhotos]);
 
+  // Poll for new photos every 15 seconds when not loading
+  useEffect(() => {
+    if (!eventId) return;
+    const interval = window.setInterval(() => {
+      if (!isRefreshing && !loading) {
+        setIsRefreshing(true);
+        loadPhotos();
+      }
+    }, 15000);
+    return () => window.clearInterval(interval);
+  }, [eventId, isRefreshing, loading, loadPhotos]);
+
   // Auto-start projector if ?projector=1 and allowed and photos are loaded
   useEffect(() => {
     if (!autoProjectorRequested) return;
