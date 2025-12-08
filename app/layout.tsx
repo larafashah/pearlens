@@ -34,7 +34,7 @@ export default function RootLayout({
       </head>
 
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[var(--background)] text-[var(--foreground)]`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[var(--background)] text-[var(--foreground)] relative`}
       >
         {/* Optional luxe video backdrop (set NEXT_PUBLIC_BG_VIDEO_URL) */}
         {process.env.NEXT_PUBLIC_BG_VIDEO_URL && (
@@ -54,7 +54,14 @@ export default function RootLayout({
             </video>
           </div>
         )}
-        {children}
+
+        {/* Foreground shimmer overlay */}
+        <div className="sparkle-overlay" aria-hidden />
+
+        {/* Main content above overlays */}
+        <div className="relative z-[1]">
+          {children}
+        </div>
       </body>
     </html>
   );
