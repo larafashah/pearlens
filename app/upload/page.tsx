@@ -28,6 +28,7 @@ export default function UploadPage() {
   const [phone, setPhone] = useState("");
   const [smsStatus, setSmsStatus] = useState<"idle" | "sending" | "success" | "error">("idle");
   const [smsMessage, setSmsMessage] = useState("");
+  const [queuedFiles, setQueuedFiles] = useState<File[]>([]);
 
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [eventExists, setEventExists] = useState<boolean | null>(null);
@@ -146,10 +147,10 @@ export default function UploadPage() {
         ctx.stroke();
 
         // Watermark text uses Alex Brush (loaded via globals.css)
-        ctx.font = `36px "Alex Brush", cursive`;
+        ctx.font = `48px "Alex Brush", cursive`;
         ctx.fillStyle = "#222";
         ctx.shadowColor = "rgba(0,0,0,0.15)";
-        ctx.shadowBlur = 2;
+        ctx.shadowBlur = 3;
 
         const textWidth = ctx.measureText(watermarkText).width;
         ctx.fillText(
@@ -169,28 +170,53 @@ export default function UploadPage() {
     });
   };
 
-  // 6) Upload handler
-  const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  // 6) Add files to queue
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files ? Array.from(e.target.files) : [];
+    if (files.length === 0) return;
 
     if (!eventId) {
       setStatus("Missing event ID. Scan the right QR code.");
+      e.target.value = "";
       return;
     }
 
     if (!eventConfigLoaded) {
       setStatus("Validating event link. Please try again in a moment.");
+      e.target.value = "";
       return;
     }
 
     if (eventExists === false) {
       setStatus("This event link is not configured. Please check with your host.");
+      e.target.value = "";
       return;
     }
 
     if (!passcodeOk) {
       setStatus("Enter the host code to upload.");
+      e.target.value = "";
+      return;
+    }
+
+    setQueuedFiles((prev) => [...prev, ...files]);
+    setStatus(
+      `Added ${files.length} photo${files.length > 1 ? "s" : ""}. Queue: ${
+        queuedFiles.length + files.length
+      }.`
+    );
+    e.target.value = "";
+  };
+
+  // 7) Upload queued files
+  const handleUploadQueued = async () => {
+    if (queuedFiles.length === 0) {
+      setStatus("Add at least one photo first.");
+      return;
+    }
+
+    if (!eventId || !eventConfigLoaded || eventExists === false || !passcodeOk) {
+      setStatus("Upload blocked. Check event link and host code.");
       return;
     }
 
@@ -199,24 +225,25 @@ export default function UploadPage() {
 
     try {
       const watermark = getWatermark();
-      const blob = await createFramedWatermarkedBlob(file, watermark);
+      let lastUrl: string | null = null;
 
-      const timestamp = Date.now();
-      const path = `events/${eventId}/uploads/${timestamp}.jpg`;
+      for (const file of queuedFiles) {
+        const blob = await createFramedWatermarkedBlob(file, watermark);
+        const timestamp = `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
+        const path = `events/${eventId}/uploads/${timestamp}.jpg`;
+        const fileRef = ref(storage, path);
+        await uploadBytes(fileRef, blob);
+        lastUrl = await getDownloadURL(fileRef);
+      }
 
-      const fileRef = ref(storage, path);
-      await uploadBytes(fileRef, blob);
-
-      const downloadUrl = await getDownloadURL(fileRef);
-      setLastPhotoUrl(downloadUrl);
-      setStatus("Uploaded! Take another.");
+      if (lastUrl) setLastPhotoUrl(lastUrl);
+      setStatus(`Uploaded ${queuedFiles.length} photo${queuedFiles.length === 1 ? "" : "s"}!`);
+      setQueuedFiles([]);
     } catch (err) {
       console.error(err);
       setStatus("Upload failed. Please try again.");
-      setLastPhotoUrl(null);
     } finally {
       setIsUploading(false);
-      e.target.value = "";
     }
   };
 
@@ -244,7 +271,7 @@ export default function UploadPage() {
     }
   };
 
-  // 7) UI
+  // 8) UI
   return (
     <main className="min-h-screen flex flex-col items-center justify-center px-4 py-8 bg-gray-100">
       <section className="w-full max-w-md bg-white shadow-md p-6 rounded-xl text-center">
@@ -291,14 +318,33 @@ export default function UploadPage() {
           className="hidden"
         />
 
-        <label
-          htmlFor="file-input"
-          className={`inline-flex w-full items-center justify-center rounded-lg px-4 py-3 text-sm font-medium text-white ${
-            isUploading ? "bg-gray-400 cursor-wait" : "bg-black cursor-pointer"
-          }`}
-        >
-          {isUploading ? "Uploading..." : "Open Camera & Upload"}
-        </label>
+        <div className="space-y-2">
+          <label
+            htmlFor="file-input"
+            className={`inline-flex w-full items-center justify-center rounded-lg px-4 py-3 text-sm font-medium text-white ${
+              isUploading ? "bg-gray-400 cursor-wait" : "bg-black cursor-pointer"
+            }`}
+          >
+            {isUploading ? "Uploading..." : "Add another photo"}
+          </label>
+
+          <button
+            type="button"
+            onClick={handleUploadQueued}
+            disabled={isUploading || queuedFiles.length === 0}
+            className={`inline-flex w-full items-center justify-center rounded-lg px-4 py-3 text-sm font-medium text-white ${
+              queuedFiles.length === 0 || isUploading
+                ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                : "bg-emerald-600 hover:bg-emerald-700"
+            }`}
+          >
+            {isUploading
+              ? "Uploading..."
+              : queuedFiles.length === 0
+              ? "Upload queued photos"
+              : `Upload ${queuedFiles.length} photo${queuedFiles.length === 1 ? "" : "s"}`}
+          </button>
+        </div>
 
         {status && <p className="mt-4 text-sm">{status}</p>}
 

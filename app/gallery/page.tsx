@@ -314,13 +314,19 @@ export default function GalleryPage() {
 
       {/* Normal viewer (thumbnail click) */}
       {selectedIndex !== null && !isProjector && (
-        <div className="fixed inset-0 z-40 bg-black/80 flex items-center justify-center px-4">
-            <div className="relative max-w-4xl w-full max-h-[90vh] flex flex-col">
-              <button
-                onClick={handleCloseViewer}
-                className="absolute top-3 right-3 rounded-full bg-black/60 px-3 py-1 text-xs text-white"
-              >
-                Close
+        <div
+          className="fixed inset-0 z-40 bg-black/80 flex items-center justify-center px-4"
+          onClick={handleCloseViewer}
+        >
+          <div
+            className="relative max-w-4xl w-full max-h-[90vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={handleCloseViewer}
+              className="absolute top-3 right-3 rounded-full bg-black/60 px-3 py-1 text-xs text-white"
+            >
+              Close
               </button>
 
               <div className="flex-1 flex items-center justify-center">
@@ -337,6 +343,12 @@ export default function GalleryPage() {
               </div>
 
             <div className="mt-3 flex items-center justify-between text-white text-xs md:text-sm">
+              <button
+                onClick={handleCloseViewer}
+                className="px-3 py-1 rounded-full bg-white/10 hover:bg-white/20"
+              >
+                Close
+              </button>
               <button
                 onClick={goPrev}
                 className="px-3 py-1 rounded-full bg-white/10 hover:bg-white/20"
