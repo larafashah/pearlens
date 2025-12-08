@@ -70,15 +70,15 @@ body::after {
   z-index: -1;
   pointer-events: none;
   background-image:
-    radial-gradient(4px 4px at 20% 30%, rgba(255, 215, 170, 0.9), transparent),
-    radial-gradient(3.4px 3.4px at 60% 20%, rgba(255, 255, 255, 0.85), transparent),
-    radial-gradient(4px 4px at 80% 70%, rgba(223, 189, 150, 0.85), transparent),
-    radial-gradient(3px 3px at 35% 80%, rgba(255, 225, 190, 0.8), transparent),
-    radial-gradient(2.4px 2.4px at 10% 60%, rgba(255, 240, 210, 0.75), transparent),
-    radial-gradient(2.6px 2.6px at 75% 50%, rgba(230, 200, 170, 0.7), transparent);
-  background-size: 140% 140%;
-  animation: sparkleShift 7s ease-in-out infinite alternate, sparkleDrift 12s linear infinite;
-  mix-blend-mode: screen;
+    radial-gradient(7px 7px at 20% 30%, rgba(255, 215, 170, 0.9), transparent),
+    radial-gradient(6px 6px at 60% 20%, rgba(255, 255, 255, 0.9), transparent),
+    radial-gradient(7px 7px at 80% 70%, rgba(223, 189, 150, 0.9), transparent),
+    radial-gradient(5px 5px at 35% 80%, rgba(255, 225, 190, 0.85), transparent),
+    radial-gradient(4px 4px at 10% 60%, rgba(255, 240, 210, 0.8), transparent),
+    radial-gradient(4.5px 4.5px at 75% 50%, rgba(230, 200, 170, 0.8), transparent),
+    radial-gradient(5px 5px at 50% 40%, rgba(255, 255, 255, 0.8), transparent);
+  background-size: 120% 120%;
+  animation: sparkleShift 5s ease-in-out infinite alternate, sparkleDrift 9s linear infinite;
   opacity: 1;
   will-change: transform, background-position;
 }
