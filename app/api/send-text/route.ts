@@ -6,11 +6,16 @@ const fromNumber = process.env.TWILIO_NUMBER;
 
 export async function POST(req: Request) {
   try {
-    if (!accountSid || !authToken || !fromNumber) {
+    const missing: string[] = [];
+    if (!accountSid) missing.push("TWILIO_ACCOUNT_SID");
+    if (!authToken) missing.push("TWILIO_AUTH_TOKEN");
+    if (!fromNumber) missing.push("TWILIO_NUMBER");
+    if (missing.length) {
       return NextResponse.json(
         {
           error:
             "SMS is not configured. Set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_NUMBER.",
+          missing,
         },
         { status: 500 }
       );
