@@ -325,7 +325,11 @@ export default function UploadPage() {
               isUploading ? "bg-gray-400 cursor-wait" : "bg-black cursor-pointer"
             }`}
           >
-            {isUploading ? "Uploading..." : "Add another photo"}
+            {isUploading
+              ? "Uploading..."
+              : queuedFiles.length > 0
+              ? "Add another photo"
+              : "Add a photo"}
           </label>
 
           <button
