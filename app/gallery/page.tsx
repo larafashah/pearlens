@@ -21,7 +21,7 @@ export default function GalleryPage() {
   const [isSavingImages, setIsSavingImages] = useState(false);
   const [shareSupported, setShareSupported] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [selectedIndices, setSelectedIndices] = useState<Set<number>>(new Set());
@@ -104,7 +104,7 @@ export default function GalleryPage() {
     setError(null);
     setLoading(true);
     setDownloadError(null);
-    setActionMessage(null);
+    setToast(null);
     try {
       const folderRef = ref(storage, `events/${eventId}/uploads`);
       const result = await listAll(folderRef);
@@ -195,6 +195,10 @@ export default function GalleryPage() {
     });
   };
 
+  const clearSelection = () => {
+    setSelectedIndices(new Set());
+  };
+
   const handleCloseViewer = () => {
     setSelectedIndex(null);
   };
@@ -233,7 +237,7 @@ export default function GalleryPage() {
   const downloadSelected = async () => {
     if (selectedIndices.size === 0 || photos.length === 0) return;
     setDownloadError(null);
-    setActionMessage(null);
+    setToast(null);
     setIsDownloading(true);
     try {
       const zip = new JSZip();
@@ -252,9 +256,11 @@ export default function GalleryPage() {
         : "gallery";
       saveAs(content, `${fileLabel}-photos.zip`);
       setActionMessage("ZIP ready in your downloads.");
+      setToast({ type: "success", message: "ZIP ready in your downloads." });
     } catch (err) {
       console.error("[GALLERY DOWNLOAD ERROR]", err);
       setDownloadError("Download failed. Please try again.");
+      setToast({ type: "error", message: "Download failed. Please try again." });
     } finally {
       setIsDownloading(false);
     }
@@ -263,7 +269,7 @@ export default function GalleryPage() {
   const saveSelectedImages = async () => {
     if (selectedIndices.size === 0 || photos.length === 0) return;
     setDownloadError(null);
-    setActionMessage(null);
+    setToast(null);
     setIsSavingImages(true);
     try {
       for (const idx of Array.from(selectedIndices)) {
@@ -273,9 +279,11 @@ export default function GalleryPage() {
         saveAs(blob, name);
       }
       setActionMessage("Saved to device (check Photos/Files).");
+      setToast({ type: "success", message: "Saved to device." });
     } catch (err) {
       console.error("[GALLERY SAVE IMAGES ERROR]", err);
       setDownloadError("Save failed. Please try again.");
+      setToast({ type: "error", message: "Save failed. Please try again." });
     } finally {
       setIsSavingImages(false);
     }
@@ -304,9 +312,11 @@ export default function GalleryPage() {
         text: "Selected photos",
       });
       setActionMessage("Shared to device (save to Photos).");
+      setToast({ type: "success", message: "Shared to device." });
     } catch (err) {
       console.error("[GALLERY SHARE ERROR]", err);
       setDownloadError("Share failed. You can try download instead.");
+      setToast({ type: "error", message: "Share failed. Try download instead." });
     } finally {
       setIsSharing(false);
     }
@@ -327,6 +337,17 @@ export default function GalleryPage() {
   return (
     <main className="min-h-screen bg-gray-100 px-4 py-6 md:py-10">
       <section className="max-w-5xl mx-auto bg-white rounded-2xl shadow-md p-4 md:p-6">
+        {toast && (
+          <div
+            className={`fixed left-1/2 -translate-x-1/2 top-4 z-50 rounded-full px-4 py-2 text-sm shadow ${
+              toast.type === "success"
+                ? "bg-emerald-600 text-white"
+                : "bg-red-600 text-white"
+            }`}
+          >
+            {toast.message}
+          </div>
+        )}
         {/* Header */}
         <header className="mb-4 md:mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div>
@@ -394,7 +415,12 @@ export default function GalleryPage() {
 
         {/* Loading / error */}
         {(loading || isRefreshing) && (
-          <div className="text-sm text-gray-700 mb-4">Loading photos...</div>
+          <div className="text-sm text-gray-700 mb-4 flex items-center gap-2">
+            <span>Loading photos...</span>
+            {isProjector && !loading && (
+              <span className="text-[11px] text-gray-500">(auto-refresh on)</span>
+            )}
+          </div>
         )}
         {error && (
           <div className="flex items-center justify-between mb-4 text-sm text-red-600">
@@ -417,8 +443,14 @@ export default function GalleryPage() {
               {downloadError && (
                 <span className="ml-2 text-red-600">{downloadError}</span>
               )}
-              {actionMessage && (
-                <span className="ml-2 text-green-600">{actionMessage}</span>
+              {selectedIndices.size > 0 && (
+                <button
+                  type="button"
+                  onClick={clearSelection}
+                  className="ml-2 text-[11px] text-gray-500 underline"
+                >
+                  Clear
+                </button>
               )}
             </div>
             <div className="text-[11px] text-gray-500">
