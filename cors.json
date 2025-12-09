@@ -1,0 +1,8 @@
+[
+  {
+    "origin": ["https://www.pearlens.com"],
+    "method": ["GET"],
+    "responseHeader": ["Content-Type"],
+    "maxAgeSeconds": 3600
+  }
+]

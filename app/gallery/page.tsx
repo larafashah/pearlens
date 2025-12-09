@@ -18,6 +18,7 @@ export default function GalleryPage() {
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
+  const [isSavingImages, setIsSavingImages] = useState(false);
   const [shareSupported, setShareSupported] = useState(false);
 
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
@@ -244,6 +245,25 @@ export default function GalleryPage() {
     }
   };
 
+  const saveSelectedImages = async () => {
+    if (selectedIndices.size === 0 || photos.length === 0) return;
+    setDownloadError(null);
+    setIsSavingImages(true);
+    try {
+      for (const idx of Array.from(selectedIndices)) {
+        const blob = await fetchPhotoBlob(idx);
+        const photo = photos[idx];
+        const name = photo?.name || `photo-${idx + 1}.jpg`;
+        saveAs(blob, name);
+      }
+    } catch (err) {
+      console.error("[GALLERY SAVE IMAGES ERROR]", err);
+      setDownloadError("Save failed. Please try again.");
+    } finally {
+      setIsSavingImages(false);
+    }
+  };
+
   const shareSelected = async () => {
     if (!shareSupported || selectedIndices.size === 0 || photos.length === 0) {
       return;
@@ -374,12 +394,12 @@ export default function GalleryPage() {
             <div className="text-xs text-gray-600">
               {selectedIndices.size > 0
                 ? `${selectedIndices.size} photo${selectedIndices.size === 1 ? "" : "s"} selected`
-                : "Select photos to download"}
+                : "Select photos to download or share"}
               {downloadError && (
                 <span className="ml-2 text-red-600">{downloadError}</span>
               )}
             </div>
-            <div className="flex items-center justify-end gap-2">
+            <div className="flex flex-wrap items-center justify-end gap-2">
               {shareSupported && (
                 <button
                   type="button"
@@ -391,9 +411,21 @@ export default function GalleryPage() {
                       : "border-gray-300 text-gray-700 hover:border-gray-500"
                   }`}
                 >
-                  {isSharing ? "Sharing..." : "Share selected"}
+                  {isSharing ? "Sharing..." : "Share to device"}
                 </button>
               )}
+              <button
+                type="button"
+                onClick={saveSelectedImages}
+                disabled={selectedIndices.size === 0 || isSavingImages}
+                className={`text-xs rounded-full px-3 py-1 border ${
+                  selectedIndices.size === 0 || isSavingImages
+                    ? "border-gray-200 text-gray-400 cursor-not-allowed"
+                    : "border-gray-300 text-gray-700 hover:border-gray-500"
+                }`}
+              >
+                {isSavingImages ? "Saving..." : "Save images"}
+              </button>
               <button
                 type="button"
                 onClick={downloadSelected}
@@ -404,7 +436,7 @@ export default function GalleryPage() {
                     : "border-gray-300 text-gray-700 hover:border-gray-500"
                 }`}
               >
-                {isDownloading ? "Preparing..." : "Download selected"}
+                {isDownloading ? "Preparing..." : "Download as ZIP"}
               </button>
               <button
                 type="button"
@@ -413,7 +445,7 @@ export default function GalleryPage() {
                 className={`text-xs rounded-full px-3 py-1 border ${
                   isRefreshing
                     ? "border-gray-200 text-gray-400 cursor-not-allowed"
-                    : "border-gray-300 text-gray-700 hover:border-gray-500"
+                    : "border-gray-300 text-gray-700 hover-border-gray-500"
                 }`}
               >
                 {isRefreshing ? "Refreshing..." : "Refresh"}
