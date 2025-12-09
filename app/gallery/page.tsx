@@ -216,14 +216,6 @@ export default function GalleryPage() {
     return response.blob();
   };
 
-  const prettyEventLabel = eventDisplayName
-    ? eventDisplayName
-    : eventId
-    ? eventId
-        .replace(/[-_]+/g, " ")
-        .replace(/\b\w/g, (c) => c.toUpperCase())
-    : "No Event Selected";
-
   const downloadSelected = async () => {
     if (selectedIndices.size === 0 || photos.length === 0) return;
     setDownloadError(null);
