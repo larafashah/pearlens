@@ -47,9 +47,13 @@ export async function POST(req: Request) {
       );
     }
 
+    const sid = accountSid as string;
+    const token = authToken as string;
+    const from = fromNumber as string;
+
     const payload = new URLSearchParams();
     payload.append("To", normalizedTo);
-    payload.append("From", fromNumber);
+    payload.append("From", from);
     payload.append("Body", "Here is your photo — thanks for sharing!");
     payload.append("MediaUrl", photoUrl);
 
@@ -59,7 +63,7 @@ export async function POST(req: Request) {
         method: "POST",
         headers: {
           Authorization: `Basic ${Buffer.from(
-            `${accountSid}:${authToken}`
+            `${sid}:${token}`
           ).toString("base64")}`,
           "Content-Type": "application/x-www-form-urlencoded",
         },
