@@ -410,6 +410,11 @@ export default function GalleryPage() {
                 <span className="ml-2 text-red-600">{downloadError}</span>
               )}
             </div>
+            <div className="text-[11px] text-gray-500">
+              {shareSupported
+                ? "Tip: On iPhone, use Share to save to Photos."
+                : "Tip: Use Save on mobile; ZIP works best on desktop."}
+            </div>
             <div className="flex flex-wrap items-center justify-end gap-2">
               {shareSupported && (
                 <button
@@ -425,7 +430,7 @@ export default function GalleryPage() {
                   {isSharing ? "Sharing..." : "Share to device"}
                 </button>
               )}
-              {isMobile && (
+              {isMobile && !shareSupported && (
                 <button
                   type="button"
                   onClick={saveSelectedImages}
