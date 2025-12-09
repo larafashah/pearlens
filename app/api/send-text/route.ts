@@ -8,7 +8,10 @@ export async function POST(req: Request) {
   try {
     if (!accountSid || !authToken || !fromNumber) {
       return NextResponse.json(
-        { error: "SMS is not configured. Set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_NUMBER." },
+        {
+          error:
+            "SMS is not configured. Set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_NUMBER.",
+        },
         { status: 500 }
       );
     }
@@ -16,13 +19,33 @@ export async function POST(req: Request) {
     const { phone, photoUrl } = await req.json();
 
     if (!phone || !photoUrl) {
-      return NextResponse.json({ error: "Phone and photoUrl are required." }, { status: 400 });
+      return NextResponse.json(
+        { error: "Phone and photoUrl are required." },
+        { status: 400 }
+      );
+    }
+
+    const normalizePhone = (raw: string) => {
+      const trimmed = raw.trim();
+      if (trimmed.startsWith("+")) return trimmed;
+      const digits = trimmed.replace(/\D/g, "");
+      if (digits.length === 10) return `+1${digits}`;
+      if (digits.length === 11 && digits.startsWith("1")) return `+${digits}`;
+      return null;
+    };
+
+    const normalizedTo = normalizePhone(phone);
+    if (!normalizedTo) {
+      return NextResponse.json(
+        { error: "Invalid phone format. Use +15551234567 or 10-digit US number." },
+        { status: 400 }
+      );
     }
 
     const payload = new URLSearchParams();
-    payload.append("To", phone);
+    payload.append("To", normalizedTo);
     payload.append("From", fromNumber);
-    payload.append("Body", "Here is your photo—thanks for sharing!");
+    payload.append("Body", "Here is your photo — thanks for sharing!");
     payload.append("MediaUrl", photoUrl);
 
     const twilioResponse = await fetch(
@@ -30,7 +53,9 @@ export async function POST(req: Request) {
       {
         method: "POST",
         headers: {
-          Authorization: `Basic ${Buffer.from(`${accountSid}:${authToken}`).toString("base64")}`,
+          Authorization: `Basic ${Buffer.from(
+            `${accountSid}:${authToken}`
+          ).toString("base64")}`,
           "Content-Type": "application/x-www-form-urlencoded",
         },
         body: payload.toString(),
@@ -40,7 +65,10 @@ export async function POST(req: Request) {
     if (!twilioResponse.ok) {
       const errorText = await twilioResponse.text();
       console.error("Twilio send error:", errorText);
-      return NextResponse.json({ error: "Failed to send text." }, { status: 502 });
+      return NextResponse.json(
+        { error: "Failed to send text.", detail: errorText },
+        { status: 502 }
+      );
     }
 
     return NextResponse.json({ ok: true });
