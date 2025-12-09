@@ -20,6 +20,7 @@ export default function GalleryPage() {
   const [isSharing, setIsSharing] = useState(false);
   const [isSavingImages, setIsSavingImages] = useState(false);
   const [shareSupported, setShareSupported] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [selectedIndices, setSelectedIndices] = useState<Set<number>>(new Set());
@@ -54,10 +55,20 @@ export default function GalleryPage() {
       })();
     setShareSupported(canShareFiles);
 
+    const updateIsMobile = () => {
+      if (typeof window === "undefined") return;
+      setIsMobile(window.innerWidth < 768);
+    };
+    updateIsMobile();
+    window.addEventListener("resize", updateIsMobile);
+
     const proj = params.get("projector");
     if (proj === "1" || proj === "true") {
       setAutoProjectorRequested(true);
     }
+    return () => {
+      window.removeEventListener("resize", updateIsMobile);
+    };
   }, []);
 
   // Load event config from Firestore (projectorEnabled, displayName)
@@ -414,18 +425,20 @@ export default function GalleryPage() {
                   {isSharing ? "Sharing..." : "Share to device"}
                 </button>
               )}
-              <button
-                type="button"
-                onClick={saveSelectedImages}
-                disabled={selectedIndices.size === 0 || isSavingImages}
-                className={`text-xs rounded-full px-3 py-1 border ${
-                  selectedIndices.size === 0 || isSavingImages
-                    ? "border-gray-200 text-gray-400 cursor-not-allowed"
-                    : "border-gray-300 text-gray-700 hover:border-gray-500"
-                }`}
-              >
-                {isSavingImages ? "Saving..." : "Save images"}
-              </button>
+              {isMobile && (
+                <button
+                  type="button"
+                  onClick={saveSelectedImages}
+                  disabled={selectedIndices.size === 0 || isSavingImages}
+                  className={`text-xs rounded-full px-3 py-1 border ${
+                    selectedIndices.size === 0 || isSavingImages
+                      ? "border-gray-200 text-gray-400 cursor-not-allowed"
+                      : "border-gray-300 text-gray-700 hover:border-gray-500"
+                  }`}
+                >
+                  {isSavingImages ? "Saving..." : "Save images"}
+                </button>
+              )}
               <button
                 type="button"
                 onClick={downloadSelected}
