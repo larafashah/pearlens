@@ -6,15 +6,22 @@ import { ref, listAll, getDownloadURL } from "firebase/storage";
 import { storage } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import JSZip from "jszip";
+import { saveAs } from "file-saver";
 
 export default function GalleryPage() {
   const [eventId, setEventId] = useState("");
-  const [photos, setPhotos] = useState<string[]>([]);
+  const [photos, setPhotos] = useState<{ url: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
+  const [shareSupported, setShareSupported] = useState(false);
 
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [selectedIndices, setSelectedIndices] = useState<Set<number>>(new Set());
 
   // Projector mode
   const [isProjector, setIsProjector] = useState(false);
@@ -31,6 +38,20 @@ export default function GalleryPage() {
     const params = new URLSearchParams(window.location.search);
     const id = params.get("event") || "";
     setEventId(id);
+    const canShareFiles =
+      typeof navigator !== "undefined" &&
+      typeof File !== "undefined" &&
+      !!navigator.canShare &&
+      (() => {
+        try {
+          return navigator.canShare({
+            files: [new File([""], "test.txt", { type: "text/plain" })],
+          });
+        } catch {
+          return false;
+        }
+      })();
+    setShareSupported(canShareFiles);
 
     const proj = params.get("projector");
     if (proj === "1" || proj === "true") {
@@ -69,6 +90,7 @@ export default function GalleryPage() {
     if (!eventId) return;
     setError(null);
     setLoading(true);
+    setDownloadError(null);
     try {
       const folderRef = ref(storage, `events/${eventId}/uploads`);
       const result = await listAll(folderRef);
@@ -79,11 +101,15 @@ export default function GalleryPage() {
           a.name.localeCompare(b.name, undefined, { numeric: true })
         );
 
-      const urls = await Promise.all(
-        sortedItems.map((item) => getDownloadURL(item))
+      const photoEntries = await Promise.all(
+        sortedItems.map(async (item) => {
+          const url = await getDownloadURL(item);
+          return { url, name: item.name };
+        })
       );
 
-      setPhotos(urls);
+      setPhotos(photoEntries);
+      setSelectedIndices(new Set());
     } catch (err) {
       console.error("[GALLERY LOAD ERROR]", err);
       setError("Unable to load photos for this event.");
@@ -97,17 +123,17 @@ export default function GalleryPage() {
     loadPhotos();
   }, [loadPhotos]);
 
-  // Poll for new photos every 15 seconds when not loading
+  // Poll for new photos every 30 seconds only while projector is active
   useEffect(() => {
-    if (!eventId) return;
+    if (!eventId || !isProjector) return;
     const interval = window.setInterval(() => {
       if (!isRefreshing && !loading) {
         setIsRefreshing(true);
         loadPhotos();
       }
-    }, 15000);
+    }, 30000);
     return () => window.clearInterval(interval);
-  }, [eventId, isRefreshing, loading, loadPhotos]);
+  }, [eventId, isProjector, isRefreshing, loading, loadPhotos]);
 
   // Auto-start projector if ?projector=1 and allowed and photos are loaded
   useEffect(() => {
@@ -143,6 +169,18 @@ export default function GalleryPage() {
     setSelectedIndex(index);
   };
 
+  const toggleSelection = (index: number) => {
+    setSelectedIndices((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) {
+        next.delete(index);
+      } else {
+        next.add(index);
+      }
+      return next;
+    });
+  };
+
   const handleCloseViewer = () => {
     setSelectedIndex(null);
   };
@@ -166,6 +204,81 @@ export default function GalleryPage() {
   const refresh = () => {
     setIsRefreshing(true);
     loadPhotos();
+  };
+
+  const fetchPhotoBlob = async (photoIndex: number) => {
+    const photo = photos[photoIndex];
+    if (!photo) throw new Error("Photo not found");
+    const response = await fetch(photo.url);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch ${photo.name}`);
+    }
+    return response.blob();
+  };
+
+  const prettyEventLabel = eventDisplayName
+    ? eventDisplayName
+    : eventId
+    ? eventId
+        .replace(/[-_]+/g, " ")
+        .replace(/\b\w/g, (c) => c.toUpperCase())
+    : "No Event Selected";
+
+  const downloadSelected = async () => {
+    if (selectedIndices.size === 0 || photos.length === 0) return;
+    setDownloadError(null);
+    setIsDownloading(true);
+    try {
+      const zip = new JSZip();
+      const tasks = Array.from(selectedIndices).map(async (idx) => {
+        const photo = photos[idx];
+        if (!photo) return;
+        const blob = await fetchPhotoBlob(idx);
+        const fileName = photo.name || `photo-${idx + 1}.jpg`;
+        zip.file(fileName, blob);
+      });
+
+      await Promise.all(tasks);
+      const content = await zip.generateAsync({ type: "blob" });
+      const fileLabel = prettyEventLabel
+        ? prettyEventLabel.replace(/\s+/g, "-").toLowerCase()
+        : "gallery";
+      saveAs(content, `${fileLabel}-photos.zip`);
+    } catch (err) {
+      console.error("[GALLERY DOWNLOAD ERROR]", err);
+      setDownloadError("Download failed. Please try again.");
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  const shareSelected = async () => {
+    if (!shareSupported || selectedIndices.size === 0 || photos.length === 0) {
+      return;
+    }
+    setDownloadError(null);
+    setIsSharing(true);
+    try {
+      const files = await Promise.all(
+        Array.from(selectedIndices).map(async (idx) => {
+          const blob = await fetchPhotoBlob(idx);
+          const photo = photos[idx];
+          const name = photo?.name || `photo-${idx + 1}.jpg`;
+          return new File([blob], name, { type: blob.type || "image/jpeg" });
+        })
+      );
+
+      await navigator.share({
+        files,
+        title: prettyEventLabel || "Gallery",
+        text: "Selected photos",
+      });
+    } catch (err) {
+      console.error("[GALLERY SHARE ERROR]", err);
+      setDownloadError("Share failed. You can try download instead.");
+    } finally {
+      setIsSharing(false);
+    }
   };
 
   const stopProjector = () => {
@@ -265,34 +378,91 @@ export default function GalleryPage() {
           </div>
         )}
         {!error && !loading && (
-          <div className="mb-4 flex justify-end">
-            <button
-              type="button"
-              onClick={refresh}
-              disabled={isRefreshing}
-              className={`text-xs rounded-full px-3 py-1 border ${
-                isRefreshing
-                  ? "border-gray-200 text-gray-400 cursor-not-allowed"
-                  : "border-gray-300 text-gray-700 hover:border-gray-500"
-              }`}
-            >
-              {isRefreshing ? "Refreshing..." : "Refresh"}
-            </button>
+          <div className="mb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+            <div className="text-xs text-gray-600">
+              {selectedIndices.size > 0
+                ? `${selectedIndices.size} photo${selectedIndices.size === 1 ? "" : "s"} selected`
+                : "Select photos to download"}
+              {downloadError && (
+                <span className="ml-2 text-red-600">{downloadError}</span>
+              )}
+            </div>
+            <div className="flex items-center justify-end gap-2">
+              {shareSupported && (
+                <button
+                  type="button"
+                  onClick={shareSelected}
+                  disabled={selectedIndices.size === 0 || isSharing}
+                  className={`text-xs rounded-full px-3 py-1 border ${
+                    selectedIndices.size === 0 || isSharing
+                      ? "border-gray-200 text-gray-400 cursor-not-allowed"
+                      : "border-gray-300 text-gray-700 hover:border-gray-500"
+                  }`}
+                >
+                  {isSharing ? "Sharing..." : "Share selected"}
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={downloadSelected}
+                disabled={selectedIndices.size === 0 || isDownloading}
+                className={`text-xs rounded-full px-3 py-1 border ${
+                  selectedIndices.size === 0 || isDownloading
+                    ? "border-gray-200 text-gray-400 cursor-not-allowed"
+                    : "border-gray-300 text-gray-700 hover:border-gray-500"
+                }`}
+              >
+                {isDownloading ? "Preparing..." : "Download selected"}
+              </button>
+              <button
+                type="button"
+                onClick={refresh}
+                disabled={isRefreshing}
+                className={`text-xs rounded-full px-3 py-1 border ${
+                  isRefreshing
+                    ? "border-gray-200 text-gray-400 cursor-not-allowed"
+                    : "border-gray-300 text-gray-700 hover:border-gray-500"
+                }`}
+              >
+                {isRefreshing ? "Refreshing..." : "Refresh"}
+              </button>
+            </div>
           </div>
         )}
 
         {/* Grid */}
         {!loading && !error && photos.length > 0 && (
           <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 md:gap-3">
-            {photos.map((url, index) => (
+            {photos.map((photo, index) => (
               <button
-                key={url}
+                key={photo.url}
                 type="button"
                 onClick={() => handleThumbClick(index)}
-                className="relative aspect-square overflow-hidden rounded-lg border border-gray-200 bg-gray-50"
+                className={`relative aspect-square overflow-hidden rounded-lg border border-gray-200 bg-gray-50 ${
+                  selectedIndices.has(index) ? "ring-2 ring-black" : ""
+                }`}
               >
+                <button
+                  type="button"
+                  aria-label={
+                    selectedIndices.has(index)
+                      ? "Deselect photo"
+                      : "Select photo for download"
+                  }
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleSelection(index);
+                  }}
+                  className={`absolute top-2 left-2 z-10 h-7 w-7 rounded-md border flex items-center justify-center text-xs font-semibold ${
+                    selectedIndices.has(index)
+                      ? "bg-black text-white border-black"
+                      : "bg-white/80 text-gray-700 border-gray-200"
+                  }`}
+                >
+                  {selectedIndices.has(index) ? "✓" : "+"}
+                </button>
                 <Image
-                  src={url}
+                  src={photo.url}
                   alt={`Photo ${index + 1}`}
                   fill
                   sizes="(min-width: 1024px) 180px, (min-width: 768px) 160px, 32vw"
@@ -344,7 +514,7 @@ export default function GalleryPage() {
               <div className="flex-1 flex items-center justify-center">
                 <div className="relative w-full h-[80vh]">
                   <Image
-                    src={photos[selectedIndex]}
+                    src={photos[selectedIndex].url}
                     alt={`Photo ${selectedIndex + 1}`}
                     fill
                     sizes="(min-width: 1024px) 1024px, 90vw"
@@ -391,7 +561,7 @@ export default function GalleryPage() {
           <div className="max-w-[95vw] max-h-[85vh] flex items-center justify-center">
             <div className="relative w-[95vw] h-[85vh]">
               <Image
-                src={photos[selectedIndex]}
+                src={photos[selectedIndex].url}
                 alt={`Photo ${selectedIndex + 1}`}
                 fill
                 sizes="95vw"
