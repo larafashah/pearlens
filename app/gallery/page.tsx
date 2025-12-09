@@ -21,6 +21,7 @@ export default function GalleryPage() {
   const [isSavingImages, setIsSavingImages] = useState(false);
   const [shareSupported, setShareSupported] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
 
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [selectedIndices, setSelectedIndices] = useState<Set<number>>(new Set());
@@ -103,6 +104,7 @@ export default function GalleryPage() {
     setError(null);
     setLoading(true);
     setDownloadError(null);
+    setActionMessage(null);
     try {
       const folderRef = ref(storage, `events/${eventId}/uploads`);
       const result = await listAll(folderRef);
@@ -231,6 +233,7 @@ export default function GalleryPage() {
   const downloadSelected = async () => {
     if (selectedIndices.size === 0 || photos.length === 0) return;
     setDownloadError(null);
+    setActionMessage(null);
     setIsDownloading(true);
     try {
       const zip = new JSZip();
@@ -248,6 +251,7 @@ export default function GalleryPage() {
         ? prettyEventLabel.replace(/\s+/g, "-").toLowerCase()
         : "gallery";
       saveAs(content, `${fileLabel}-photos.zip`);
+      setActionMessage("ZIP ready in your downloads.");
     } catch (err) {
       console.error("[GALLERY DOWNLOAD ERROR]", err);
       setDownloadError("Download failed. Please try again.");
@@ -259,6 +263,7 @@ export default function GalleryPage() {
   const saveSelectedImages = async () => {
     if (selectedIndices.size === 0 || photos.length === 0) return;
     setDownloadError(null);
+    setActionMessage(null);
     setIsSavingImages(true);
     try {
       for (const idx of Array.from(selectedIndices)) {
@@ -267,6 +272,7 @@ export default function GalleryPage() {
         const name = photo?.name || `photo-${idx + 1}.jpg`;
         saveAs(blob, name);
       }
+      setActionMessage("Saved to device (check Photos/Files).");
     } catch (err) {
       console.error("[GALLERY SAVE IMAGES ERROR]", err);
       setDownloadError("Save failed. Please try again.");
@@ -280,6 +286,7 @@ export default function GalleryPage() {
       return;
     }
     setDownloadError(null);
+    setActionMessage(null);
     setIsSharing(true);
     try {
       const files = await Promise.all(
@@ -296,6 +303,7 @@ export default function GalleryPage() {
         title: prettyEventLabel || "Gallery",
         text: "Selected photos",
       });
+      setActionMessage("Shared to device (save to Photos).");
     } catch (err) {
       console.error("[GALLERY SHARE ERROR]", err);
       setDownloadError("Share failed. You can try download instead.");
@@ -408,6 +416,9 @@ export default function GalleryPage() {
                 : "Select photos to download or share"}
               {downloadError && (
                 <span className="ml-2 text-red-600">{downloadError}</span>
+              )}
+              {actionMessage && (
+                <span className="ml-2 text-green-600">{actionMessage}</span>
               )}
             </div>
             <div className="text-[11px] text-gray-500">
