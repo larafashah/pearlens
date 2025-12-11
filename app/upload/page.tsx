@@ -1,10 +1,20 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { storage, db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import type { ChangeEvent } from "react";
+
+type QueueStatus = "queued" | "uploading" | "done" | "error";
+type QueuedFile = {
+  id: string;
+  file: File;
+  preview: string;
+  status: QueueStatus;
+  sizeLabel: string;
+  progress: number;
+};
 
 // Ensure the Alex Brush font is loaded before drawing to canvas
 let alexBrushFontPromise: Promise<void> | null = null;
@@ -28,7 +38,7 @@ export default function UploadPage() {
   const [phone, setPhone] = useState("");
   const [smsStatus, setSmsStatus] = useState<"idle" | "sending" | "success" | "error">("idle");
   const [smsMessage, setSmsMessage] = useState("");
-  const [queuedFiles, setQueuedFiles] = useState<File[]>([]);
+  const [queuedFiles, setQueuedFiles] = useState<QueuedFile[]>([]);
 
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [eventExists, setEventExists] = useState<boolean | null>(null);
@@ -170,6 +180,14 @@ export default function UploadPage() {
     });
   };
 
+  const formatBytes = (bytes: number) => {
+    if (bytes === 0) return "0 B";
+    const k = 1024;
+    const sizes = ["B", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return `${(bytes / Math.pow(k, i)).toFixed(i === 0 ? 0 : 1)} ${sizes[i]}`;
+  };
+
   // 6) Add files to queue
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files ? Array.from(e.target.files) : [];
@@ -199,7 +217,20 @@ export default function UploadPage() {
       return;
     }
 
-    setQueuedFiles((prev) => [...prev, ...files]);
+    const newQueued = files.map((file) => {
+      const id = `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
+      const preview = URL.createObjectURL(file);
+      return {
+        id,
+        file,
+        preview,
+        status: "queued" as QueueStatus,
+        sizeLabel: formatBytes(file.size),
+        progress: 0,
+      };
+    });
+
+    setQueuedFiles((prev) => [...prev, ...newQueued]);
     setStatus(
       `Added ${files.length} photo${files.length > 1 ? "s" : ""}. Queue: ${
         queuedFiles.length + files.length
@@ -222,26 +253,64 @@ export default function UploadPage() {
 
     setIsUploading(true);
     setStatus(watermarkReady ? "Uploading..." : "Preparing watermark...");
+    setQueuedFiles((prev) =>
+      prev.map((q) => ({ ...q, status: "queued", progress: 0 }))
+    );
 
     try {
       const watermark = getWatermark();
       let lastUrl: string | null = null;
 
-      for (const file of queuedFiles) {
-        const blob = await createFramedWatermarkedBlob(file, watermark);
+      for (const item of queuedFiles) {
+        const blob = await createFramedWatermarkedBlob(item.file, watermark);
+        setQueuedFiles((prev) =>
+          prev.map((q) =>
+            q.id === item.id ? { ...q, status: "uploading", progress: 0 } : q
+          )
+        );
         const timestamp = `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
         const path = `events/${eventId}/uploads/${timestamp}.jpg`;
         const fileRef = ref(storage, path);
-        await uploadBytes(fileRef, blob);
-        lastUrl = await getDownloadURL(fileRef);
+        const uploadTask = uploadBytesResumable(fileRef, blob);
+
+        await new Promise<void>((resolve, reject) => {
+          uploadTask.on(
+            "state_changed",
+            (snapshot) => {
+              const pct = Math.round(
+                (snapshot.bytesTransferred / snapshot.totalBytes) * 100
+              );
+              setQueuedFiles((prev) =>
+                prev.map((q) =>
+                  q.id === item.id ? { ...q, progress: pct, status: "uploading" } : q
+                )
+              );
+            },
+            (err) => reject(err),
+            () => resolve()
+          );
+        });
+
+        lastUrl = await getDownloadURL(uploadTask.snapshot.ref);
+        setQueuedFiles((prev) =>
+          prev.map((q) =>
+            q.id === item.id ? { ...q, status: "done", progress: 100 } : q
+          )
+        );
       }
 
       if (lastUrl) setLastPhotoUrl(lastUrl);
       setStatus(`Uploaded ${queuedFiles.length} photo${queuedFiles.length === 1 ? "" : "s"}!`);
+      queuedFiles.forEach((q) => URL.revokeObjectURL(q.preview));
       setQueuedFiles([]);
     } catch (err) {
       console.error(err);
       setStatus("Upload failed. Please try again.");
+        setQueuedFiles((prev) =>
+          prev.map((q) =>
+            q.status === "uploading" ? { ...q, status: "error", progress: 0 } : q
+          )
+        );
     } finally {
       setIsUploading(false);
     }
@@ -349,6 +418,76 @@ export default function UploadPage() {
               : `Upload ${queuedFiles.length} photo${queuedFiles.length === 1 ? "" : "s"}`}
           </button>
         </div>
+
+        {queuedFiles.length > 0 && (
+          <div className="mt-3 space-y-2">
+            <div className="text-xs font-medium text-gray-700">
+              Queue: {queuedFiles.length} photo{queuedFiles.length === 1 ? "" : "s"}
+            </div>
+            <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+              {queuedFiles.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex items-center gap-3 rounded-lg border border-gray-200 p-2"
+                >
+                  <div className="h-14 w-14 rounded bg-gray-100 overflow-hidden">
+                    <img
+                      src={item.preview}
+                      alt="Preview"
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-700">{item.sizeLabel}</span>
+                      <span
+                        className={`text-[11px] px-2 py-0.5 rounded-full ${
+                          item.status === "queued"
+                            ? "bg-gray-100 text-gray-700"
+                            : item.status === "uploading"
+                            ? "bg-amber-100 text-amber-800"
+                            : item.status === "done"
+                            ? "bg-emerald-100 text-emerald-800"
+                            : "bg-red-100 text-red-700"
+                        }`}
+                      >
+                        {item.status === "queued"
+                          ? "Queued"
+                          : item.status === "uploading"
+                          ? "Uploading"
+                          : item.status === "done"
+                          ? "Done"
+                          : "Error"}
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-gray-500 truncate">
+                      {item.file.name}
+                    </div>
+                    {item.status === "uploading" && (
+                      <div className="mt-1 h-2 w-full rounded-full bg-gray-100">
+                        <div
+                          className="h-2 rounded-full bg-emerald-500 transition-all"
+                          style={{ width: `${item.progress}%` }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      URL.revokeObjectURL(item.preview);
+                      setQueuedFiles((prev) => prev.filter((q) => q.id !== item.id));
+                    }}
+                    className="text-xs text-gray-500 hover:text-red-600"
+                    disabled={isUploading}
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {status && <p className="mt-4 text-sm">{status}</p>}
 
