@@ -21,7 +21,11 @@ export async function POST(req: Request) {
       );
     }
 
-    const { phone, photoUrl } = await req.json();
+    const { phone, photoUrl, honey } = await req.json();
+
+    if (typeof honey === "string" && honey.trim().length > 0) {
+      return NextResponse.json({ error: "Not allowed" }, { status: 400 });
+    }
 
     if (!phone || !photoUrl) {
       return NextResponse.json(

@@ -36,6 +36,8 @@ export default function UploadPage() {
   const [watermarkReady, setWatermarkReady] = useState(false);
   const [lastPhotoUrl, setLastPhotoUrl] = useState<string | null>(null);
   const [phone, setPhone] = useState("");
+  const [uploadHoneypot, setUploadHoneypot] = useState("");
+  const [smsHoneypot, setSmsHoneypot] = useState("");
   const [smsStatus, setSmsStatus] = useState<"idle" | "sending" | "success" | "error">("idle");
   const [smsMessage, setSmsMessage] = useState("");
   const [queuedFiles, setQueuedFiles] = useState<QueuedFile[]>([]);
@@ -193,6 +195,12 @@ export default function UploadPage() {
     const files = e.target.files ? Array.from(e.target.files) : [];
     if (files.length === 0) return;
 
+    // Honeypot: ignore bots
+    if (uploadHoneypot.trim().length > 0) {
+      e.target.value = "";
+      return;
+    }
+
     if (!eventId) {
       setStatus("Missing event ID. Scan the right QR code.");
       e.target.value = "";
@@ -319,6 +327,11 @@ export default function UploadPage() {
   const handleSendText = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!lastPhotoUrl) return;
+    if (smsHoneypot.trim().length > 0) {
+      setSmsStatus("error");
+      setSmsMessage("Could not send the text. Please try again.");
+      return;
+    }
     setSmsStatus("sending");
     setSmsMessage("Sending your photo...");
 
@@ -326,7 +339,7 @@ export default function UploadPage() {
       const res = await fetch("/api/send-text", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone, photoUrl: lastPhotoUrl }),
+        body: JSON.stringify({ phone, photoUrl: lastPhotoUrl, honey: smsHoneypot }),
       });
 
       if (!res.ok) throw new Error("Failed");
@@ -385,6 +398,16 @@ export default function UploadPage() {
           onChange={handleFileChange}
           disabled={isUploading}
           className="hidden"
+        />
+        <input
+          type="text"
+          name="website"
+          autoComplete="off"
+          value={uploadHoneypot}
+          onChange={(e) => setUploadHoneypot(e.target.value)}
+          className="hidden"
+          tabIndex={-1}
+          aria-hidden="true"
         />
 
         <div className="space-y-2">
@@ -498,6 +521,16 @@ export default function UploadPage() {
               Enter your number to receive the watermarked photo. Message/data rates may apply.
             </p>
             <form className="space-y-3" onSubmit={handleSendText}>
+              <input
+                type="text"
+                name="email"
+                autoComplete="off"
+                value={smsHoneypot}
+                onChange={(e) => setSmsHoneypot(e.target.value)}
+                className="hidden"
+                tabIndex={-1}
+                aria-hidden="true"
+              />
               <input
                 type="tel"
                 value={phone}
