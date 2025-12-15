@@ -125,6 +125,7 @@ export default function HomePage() {
         <div className="absolute inset-0 -z-10 bg-gradient-to-b from-[#f7f4ef] via-[#f1e7da] to-[#f7f4ef]" />
       )}
       <div className="pointer-events-none absolute inset-0 -z-5 bg-gradient-to-b from-white/40 via-transparent to-white/50" />
+      <div className="pointer-events-none absolute inset-0 -z-5 animated-overlay opacity-80" />
       {/* HEADER */}
       <header className="w-full border-b border-neutral-200 bg-[#f7f4ef]/95 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
@@ -506,6 +507,28 @@ export default function HomePage() {
           </div>
         </div>
       </footer>
+
+      <style jsx global>{`
+        .animated-overlay {
+          background-image: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.4), transparent 35%),
+            radial-gradient(circle at 80% 30%, rgba(255, 255, 255, 0.35), transparent 30%),
+            radial-gradient(circle at 60% 70%, rgba(255, 255, 255, 0.3), transparent 25%),
+            linear-gradient(120deg, rgba(255, 255, 255, 0.2), transparent 60%);
+          mix-blend-mode: screen;
+          animation: shimmerMove 18s linear infinite;
+        }
+        @keyframes shimmerMove {
+          0% {
+            background-position: 0% 0%, 100% 20%, 50% 100%, 0% 0%;
+          }
+          50% {
+            background-position: 50% 40%, 50% 60%, 80% 40%, 50% 50%;
+          }
+          100% {
+            background-position: 100% 80%, 0% 100%, 20% 20%, 100% 100%;
+          }
+        }
+      `}</style>
     </main>
   );
 }
