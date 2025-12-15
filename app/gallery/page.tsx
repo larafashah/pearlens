@@ -255,7 +255,6 @@ export default function GalleryPage() {
         ? prettyEventLabel.replace(/\s+/g, "-").toLowerCase()
         : "gallery";
       saveAs(content, `${fileLabel}-photos.zip`);
-      setActionMessage("ZIP ready in your downloads.");
       setToast({ type: "success", message: "ZIP ready in your downloads." });
     } catch (err) {
       console.error("[GALLERY DOWNLOAD ERROR]", err);
@@ -278,7 +277,6 @@ export default function GalleryPage() {
         const name = photo?.name || `photo-${idx + 1}.jpg`;
         saveAs(blob, name);
       }
-      setActionMessage("Saved to device (check Photos/Files).");
       setToast({ type: "success", message: "Saved to device." });
     } catch (err) {
       console.error("[GALLERY SAVE IMAGES ERROR]", err);
@@ -311,7 +309,6 @@ export default function GalleryPage() {
         title: prettyEventLabel || "Gallery",
         text: "Selected photos",
       });
-      setActionMessage("Shared to device (save to Photos).");
       setToast({ type: "success", message: "Shared to device." });
     } catch (err) {
       console.error("[GALLERY SHARE ERROR]", err);
