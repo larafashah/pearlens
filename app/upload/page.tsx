@@ -1,18 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { storage, db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import type { ChangeEvent } from "react";
 
-type QueueStatus = "queued" | "uploading" | "done" | "error";
+type QueueStatus = "queued" | "uploading" | "done" | "error" | "canceled";
 type QueuedFile = {
   id: string;
   file: File;
   preview: string;
   status: QueueStatus;
   sizeLabel: string;
+  size: number;
   progress: number;
 };
 
@@ -36,6 +37,10 @@ export default function UploadPage() {
   const [watermarkReady, setWatermarkReady] = useState(false);
   const [lastPhotoUrl, setLastPhotoUrl] = useState<string | null>(null);
   const [phone, setPhone] = useState("");
+  const [overallProgress, setOverallProgress] = useState(0);
+  const [cancelRequested, setCancelRequested] = useState(false);
+  const currentUploadTask = useRef<ReturnType<typeof uploadBytesResumable> | null>(null);
+  const cancelRef = useRef(false);
   const [uploadHoneypot, setUploadHoneypot] = useState("");
   const [smsHoneypot, setSmsHoneypot] = useState("");
   const [smsStatus, setSmsStatus] = useState<"idle" | "sending" | "success" | "error">("idle");
@@ -234,6 +239,7 @@ export default function UploadPage() {
         preview,
         status: "queued" as QueueStatus,
         sizeLabel: formatBytes(file.size),
+        size: file.size,
         progress: 0,
       };
     });
@@ -261,6 +267,9 @@ export default function UploadPage() {
 
     setIsUploading(true);
     setStatus(watermarkReady ? "Uploading..." : "Preparing watermark...");
+    setCancelRequested(false);
+    cancelRef.current = false;
+    setOverallProgress(0);
     setQueuedFiles((prev) =>
       prev.map((q) => ({ ...q, status: "queued", progress: 0 }))
     );
@@ -270,6 +279,7 @@ export default function UploadPage() {
       let lastUrl: string | null = null;
 
       for (const item of queuedFiles) {
+        if (cancelRef.current) break;
         const blob = await createFramedWatermarkedBlob(item.file, watermark);
         setQueuedFiles((prev) =>
           prev.map((q) =>
@@ -280,6 +290,7 @@ export default function UploadPage() {
         const path = `events/${eventId}/uploads/${timestamp}.jpg`;
         const fileRef = ref(storage, path);
         const uploadTask = uploadBytesResumable(fileRef, blob);
+        currentUploadTask.current = uploadTask;
 
         await new Promise<void>((resolve, reject) => {
           uploadTask.on(
@@ -288,11 +299,21 @@ export default function UploadPage() {
               const pct = Math.round(
                 (snapshot.bytesTransferred / snapshot.totalBytes) * 100
               );
-              setQueuedFiles((prev) =>
-                prev.map((q) =>
+              setQueuedFiles((prev) => {
+                const next = prev.map((q) =>
                   q.id === item.id ? { ...q, progress: pct, status: "uploading" } : q
-                )
-              );
+                );
+                const totalBytes = next.reduce((sum, f) => sum + f.size, 0);
+                const uploadedBytes = next.reduce(
+                  (sum, f) => sum + (f.progress / 100) * f.size,
+                  0
+                );
+                const percentTotal = totalBytes
+                  ? Math.round((uploadedBytes / totalBytes) * 100)
+                  : 0;
+                setOverallProgress(percentTotal);
+                return next;
+              });
             },
             (err) => reject(err),
             () => resolve()
@@ -308,19 +329,44 @@ export default function UploadPage() {
       }
 
       if (lastUrl) setLastPhotoUrl(lastUrl);
-      setStatus(`Uploaded ${queuedFiles.length} photo${queuedFiles.length === 1 ? "" : "s"}!`);
-      queuedFiles.forEach((q) => URL.revokeObjectURL(q.preview));
-      setQueuedFiles([]);
+      if (!cancelRef.current) {
+        setStatus(`Uploaded ${queuedFiles.length} photo${queuedFiles.length === 1 ? "" : "s"}!`);
+        queuedFiles.forEach((q) => URL.revokeObjectURL(q.preview));
+        setQueuedFiles([]);
+        setOverallProgress(100);
+      }
     } catch (err) {
       console.error(err);
-      setStatus("Upload failed. Please try again.");
+      if ((err as any)?.code === "storage/canceled" || cancelRef.current) {
+        setStatus("Upload canceled.");
+        setQueuedFiles((prev) =>
+          prev.map((q) =>
+            q.status === "uploading"
+              ? { ...q, status: "canceled", progress: 0 }
+              : q
+          )
+        );
+      } else {
+        setStatus("Upload failed. Please try again.");
         setQueuedFiles((prev) =>
           prev.map((q) =>
             q.status === "uploading" ? { ...q, status: "error", progress: 0 } : q
           )
         );
+      }
+      setOverallProgress(0);
     } finally {
       setIsUploading(false);
+      currentUploadTask.current = null;
+    }
+  };
+
+  const handleCancelUploads = () => {
+    if (!isUploading) return;
+    setCancelRequested(true);
+    cancelRef.current = true;
+    if (currentUploadTask.current) {
+      currentUploadTask.current.cancel();
     }
   };
 
@@ -342,7 +388,19 @@ export default function UploadPage() {
         body: JSON.stringify({ phone, photoUrl: lastPhotoUrl, honey: smsHoneypot }),
       });
 
-      if (!res.ok) throw new Error("Failed");
+      const data = await res.json();
+      if (!res.ok) {
+        const detail =
+          typeof data?.detail === "string"
+            ? data.detail
+            : typeof data?.error === "string"
+            ? data.error
+            : "Could not send the text. Please try again.";
+        setSmsStatus("error");
+        setSmsMessage(detail);
+        return;
+      }
+
       setSmsStatus("success");
       setSmsMessage("Text sent! Check your phone.");
       setPhone("");
@@ -440,6 +498,30 @@ export default function UploadPage() {
               ? "Upload queued photos"
               : `Upload ${queuedFiles.length} photo${queuedFiles.length === 1 ? "" : "s"}`}
           </button>
+
+          {isUploading && (
+            <div className="flex items-center justify-between gap-3 rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-700">
+              <div className="flex-1">
+                <div className="flex items-center justify-between">
+                  <span>Overall progress</span>
+                  <span>{overallProgress}%</span>
+                </div>
+                <div className="mt-1 h-2 w-full rounded-full bg-gray-200">
+                  <div
+                    className="h-2 rounded-full bg-emerald-500 transition-all"
+                    style={{ width: `${overallProgress}%` }}
+                  />
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleCancelUploads}
+                className="text-red-600 hover:text-red-700 whitespace-nowrap"
+              >
+                Cancel
+              </button>
+            </div>
+          )}
         </div>
 
         {queuedFiles.length > 0 && (
@@ -480,6 +562,8 @@ export default function UploadPage() {
                           ? "Uploading"
                           : item.status === "done"
                           ? "Done"
+                          : item.status === "canceled"
+                          ? "Canceled"
                           : "Error"}
                       </span>
                     </div>

@@ -435,7 +435,7 @@ export default function GalleryPage() {
           </div>
         )}
         {!error && !loading && (
-          <div className="mb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+          <div className="mb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-2 sticky bottom-2 md:static z-30 bg-white/95 backdrop-blur md:bg-transparent md:backdrop-blur-0 md:shadow-none shadow-sm px-2 py-2 rounded-xl">
             <div className="text-xs text-gray-600">
               {selectedIndices.size > 0
                 ? `${selectedIndices.size} photo${selectedIndices.size === 1 ? "" : "s"} selected`
