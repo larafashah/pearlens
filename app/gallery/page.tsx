@@ -292,7 +292,6 @@ export default function GalleryPage() {
       return;
     }
     setDownloadError(null);
-    setActionMessage(null);
     setIsSharing(true);
     try {
       const files = await Promise.all(
