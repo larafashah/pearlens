@@ -301,7 +301,7 @@ export default function UploadPage() {
               );
               setQueuedFiles((prev) => {
                 const next = prev.map((q) =>
-                  q.id === item.id ? { ...q, progress: pct, status: "uploading" } : q
+                  q.id === item.id ? { ...q, progress: pct, status: "uploading" as QueueStatus } : q
                 );
                 const totalBytes = next.reduce((sum, f) => sum + f.size, 0);
                 const uploadedBytes = next.reduce(
