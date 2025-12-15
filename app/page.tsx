@@ -124,10 +124,12 @@ export default function HomePage() {
       ) : (
         <div className="absolute inset-0 -z-10 bg-gradient-to-b from-[#f7f4ef] via-[#f1e7da] to-[#f7f4ef]" />
       )}
-      <div className="pointer-events-none absolute inset-0 -z-5 bg-gradient-to-b from-white/40 via-transparent to-white/50" />
-      <div className="pointer-events-none absolute inset-0 -z-5 animated-overlay opacity-80" />
-      {/* HEADER */}
-      <header className="w-full border-b border-neutral-200 bg-[#f7f4ef]/95 backdrop-blur">
+      <div className="pointer-events-none absolute inset-0 z-0 bg-gradient-to-b from-white/40 via-transparent to-white/50" />
+      <div className="pointer-events-none absolute inset-0 z-0 animated-overlay opacity-80" />
+
+      <div className="relative z-10 flex flex-col">
+        {/* HEADER */}
+        <header className="w-full border-b border-neutral-200 bg-[#f7f4ef]/95 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           {/* Logo */}
           <div className="flex items-center gap-2">
@@ -508,24 +510,45 @@ export default function HomePage() {
         </div>
       </footer>
 
+      </div>
+
       <style jsx global>{`
         .animated-overlay {
-          background-image: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.4), transparent 35%),
-            radial-gradient(circle at 80% 30%, rgba(255, 255, 255, 0.35), transparent 30%),
-            radial-gradient(circle at 60% 70%, rgba(255, 255, 255, 0.3), transparent 25%),
-            linear-gradient(120deg, rgba(255, 255, 255, 0.2), transparent 60%);
+          background-image:
+            radial-gradient(1px 1px at 10% 20%, rgba(255, 255, 255, 0.85), transparent 60%),
+            radial-gradient(1.2px 1.2px at 30% 40%, rgba(255, 255, 255, 0.85), transparent 60%),
+            radial-gradient(1px 1px at 60% 15%, rgba(255, 255, 255, 0.78), transparent 60%),
+            radial-gradient(1.4px 1.4px at 80% 50%, rgba(255, 255, 255, 0.82), transparent 60%),
+            radial-gradient(1px 1px at 50% 80%, rgba(255, 255, 255, 0.76), transparent 60%),
+            radial-gradient(1.3px 1.3px at 20% 70%, rgba(255, 255, 255, 0.8), transparent 60%),
+            radial-gradient(1px 1px at 70% 30%, rgba(255, 255, 255, 0.82), transparent 60%);
+          background-size: 200% 200%;
           mix-blend-mode: screen;
-          animation: shimmerMove 18s linear infinite;
+          animation: sparkleMove 18s linear infinite, sparkleTwinkle 2.3s ease-in-out infinite alternate;
         }
-        @keyframes shimmerMove {
+        @keyframes sparkleMove {
           0% {
-            background-position: 0% 0%, 100% 20%, 50% 100%, 0% 0%;
+            background-position: 0% 0%;
           }
           50% {
-            background-position: 50% 40%, 50% 60%, 80% 40%, 50% 50%;
+            background-position: 50% 60%;
           }
           100% {
-            background-position: 100% 80%, 0% 100%, 20% 20%, 100% 100%;
+            background-position: 100% 100%;
+          }
+        }
+        @keyframes sparkleTwinkle {
+          0% {
+            opacity: 0.5;
+            filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.55));
+          }
+          50% {
+            opacity: 0.9;
+            filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.85));
+          }
+          100% {
+            opacity: 0.5;
+            filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.55));
           }
         }
       `}</style>
