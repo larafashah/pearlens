@@ -43,6 +43,7 @@ export default function HomePage() {
   const [smsStatus, setSmsStatus] = useState<"idle" | "sending" | "success" | "error">("idle");
   const [smsMessage, setSmsMessage] = useState("");
   const [smsForm, setSmsForm] = useState({ phone: "", photoUrl: "" });
+  const bgVideoUrl = process.env.NEXT_PUBLIC_BG_VIDEO_URL;
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -109,7 +110,21 @@ export default function HomePage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#f7f4ef] text-[#111] flex flex-col">
+    <main className="relative min-h-screen bg-[#f7f4ef] text-[#111] flex flex-col overflow-hidden">
+      {/* Background layer (homepage only) */}
+      {bgVideoUrl ? (
+        <video
+          className="absolute inset-0 h-full w-full object-cover -z-10 opacity-40"
+          src={bgVideoUrl}
+          autoPlay
+          loop
+          muted
+          playsInline
+        />
+      ) : (
+        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-[#f7f4ef] via-[#f1e7da] to-[#f7f4ef]" />
+      )}
+      <div className="pointer-events-none absolute inset-0 -z-5 bg-gradient-to-b from-white/40 via-transparent to-white/50" />
       {/* HEADER */}
       <header className="w-full border-b border-neutral-200 bg-[#f7f4ef]/95 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
