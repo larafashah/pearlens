@@ -498,8 +498,12 @@ export default function HomePage() {
 
       {/* FOOTER */}
       <footer className="border-t border-neutral-200 bg-[#f7f4ef] px-6 py-8">
-        <div className="mx-auto flex max-w-6xl flex-col items-center gap-2 text-center text-xs text-neutral-700 sm:flex-row sm:justify-between sm:text-left">
-          <p>Pearlens - Guest galleries for weddings & events.</p>
+        <div className="mx-auto flex max-w-6xl flex-col gap-2 text-center text-xs text-neutral-700 sm:flex-row sm:items-center sm:justify-between sm:text-left">
+          <div className="space-y-1">
+            <p>Pearlens - Guest galleries for weddings & events.</p>
+            <p>Founder: Lara Fashah</p>
+            <p>17 Friar Way, Wayne, NJ 07470</p>
+          </div>
           <div className="space-x-3">
             <a href="mailto:hello@pearlens.com" className="underline">
               hello@pearlens.com
