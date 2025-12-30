@@ -602,9 +602,21 @@ export default function UploadPage() {
           <div className="mt-6 border-t pt-6 text-left">
             <p className="text-sm font-medium mb-2">Text this photo to yourself</p>
             <p className="text-xs text-gray-600 mb-3">
-              Enter your number to receive the watermarked photo. Message/data rates may apply.
+              Enter your number to receive the watermarked photo. Message/data rates may apply. By continuing, you agree to
+              a one-time SMS for this photo link (no recurring messages).{" "}
+              <a href="/sms-consent" className="underline">
+                SMS consent details
+              </a>
             </p>
             <form className="space-y-3" onSubmit={handleSendText}>
+              <label className="flex items-center gap-2 text-xs text-gray-700">
+                <input
+                  type="checkbox"
+                  required
+                  className="h-4 w-4 rounded border-gray-300"
+                />
+                I agree to receive a one-time SMS with my photo link.
+              </label>
               <input
                 type="text"
                 name="email"
