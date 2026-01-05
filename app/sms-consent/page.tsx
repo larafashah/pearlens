@@ -6,13 +6,13 @@ export default function SmsConsentPage() {
       <section className="w-full max-w-3xl space-y-6">
         <h1 className="text-2xl font-semibold">SMS Consent</h1>
         <p className="text-sm text-neutral-700">
-          By requesting a photo via SMS from Pearlens, you agree to receive a one-time text message containing a link to
+          By requesting a photo via SMS/MMS from Pearlens, you agree to receive a one-time message containing a link to
           your photo.
         </p>
         <div className="space-y-3 text-sm text-neutral-800">
           <div>
             <h2 className="font-medium">What you&apos;ll receive</h2>
-            <p>A single message with a link to the photo you selected. No recurring messages.</p>
+            <p>A single SMS/MMS with a link to the photo you selected. No recurring messages.</p>
           </div>
           <div>
             <h2 className="font-medium">Message frequency</h2>
