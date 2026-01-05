@@ -2,8 +2,10 @@
 
 export default function TermsPage() {
   return (
-    <main className="min-h-screen bg-white text-neutral-900 px-4 py-10 flex justify-center">
-      <section className="w-full max-w-4xl space-y-6">
+    <main className="relative min-h-screen bg-[#f7f4ef] text-neutral-900 px-4 py-12 flex justify-center overflow-hidden">
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#f7f4ef] via-[#e9dfd2] to-[#f7f4ef]" />
+      <div className="pointer-events-none absolute inset-0 animated-overlay opacity-70" />
+      <section className="relative w-full max-w-4xl space-y-6 bg-white/90 backdrop-blur rounded-2xl shadow-md p-6 sm:p-10">
         <h1 className="text-2xl font-semibold">Terms & Conditions</h1>
 
         <div className="space-y-4 text-sm text-neutral-800">
