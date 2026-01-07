@@ -58,17 +58,18 @@ export async function POST(req: Request) {
     const payload = new URLSearchParams();
     payload.append("To", normalizedTo);
     payload.append("From", from);
-    payload.append("Body", "Here is your photo — thanks for sharing!");
+    payload.append(
+      "Body",
+      "Pearlens: Here is your photo link. One-time message; msg & data rates may apply. Reply STOP to opt out."
+    );
     payload.append("MediaUrl", photoUrl);
 
     const twilioResponse = await fetch(
-      `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
+      `https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`,
       {
         method: "POST",
         headers: {
-          Authorization: `Basic ${Buffer.from(
-            `${sid}:${token}`
-          ).toString("base64")}`,
+          Authorization: `Basic ${Buffer.from(`${sid}:${token}`).toString("base64")}`,
           "Content-Type": "application/x-www-form-urlencoded",
         },
         body: payload.toString(),
