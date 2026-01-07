@@ -617,8 +617,7 @@ export default function UploadPage() {
               <input
                 type="checkbox"
                 required
-                disabled={!lastPhotoUrl}
-                className="h-4 w-4 rounded border-gray-300 disabled:opacity-50"
+                className="h-4 w-4 rounded border-gray-300"
               />
               I agree to receive a one-time text message from Pearlens with my photo link. Msg &amp; data rates may apply.
               Reply STOP to opt out.
