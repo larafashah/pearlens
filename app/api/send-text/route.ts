@@ -68,32 +68,43 @@ export async function POST(req: Request) {
         ? eventName.trim()
         : "your event";
 
-    const payload = new URLSearchParams();
-    payload.append("To", normalizedTo);
-    payload.append("From", from);
-    payload.append(
-      "Body",
-      `Pearlens: Here is your photo link from ${label}. One-time message; msg & data rates may apply. Reply STOP to opt out.`
-    );
-    urlsFromBody.slice(0, 10).forEach((u) => payload.append("MediaUrl", u));
+    const urlsToSend = urlsFromBody.slice(0, 5); // cap to 5 messages to avoid spam
+    const results = await Promise.all(
+      urlsToSend.map(async (url, idx) => {
+        const payload = new URLSearchParams();
+        payload.append("To", normalizedTo);
+        payload.append("From", from);
+        payload.append(
+          "Body",
+          `Pearlens: Here is your photo link from ${label} (${idx + 1}/${urlsToSend.length}). One-time message; msg & data rates may apply. Reply STOP to opt out.`
+        );
+        payload.append("MediaUrl", url);
 
-    const twilioResponse = await fetch(
-      `https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Basic ${Buffer.from(`${sid}:${token}`).toString("base64")}`,
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: payload.toString(),
-      }
+        const resp = await fetch(
+          `https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Basic ${Buffer.from(`${sid}:${token}`).toString("base64")}`,
+              "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: payload.toString(),
+          }
+        );
+
+        if (!resp.ok) {
+          const errorText = await resp.text();
+          return { ok: false, detail: errorText };
+        }
+        return { ok: true };
+      })
     );
 
-    if (!twilioResponse.ok) {
-      const errorText = await twilioResponse.text();
-      console.error("Twilio send error:", errorText);
+    const failed = results.find((r) => !r.ok);
+    if (failed) {
+      console.error("Twilio send error:", failed.detail);
       return NextResponse.json(
-        { error: "Failed to send text.", detail: errorText },
+        { error: "Failed to send text.", detail: failed.detail },
         { status: 502 }
       );
     }
