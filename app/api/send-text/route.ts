@@ -21,7 +21,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const { phone, photoUrl, honey } = await req.json();
+    const { phone, photoUrl, honey, eventName } = await req.json();
 
     if (typeof honey === "string" && honey.trim().length > 0) {
       return NextResponse.json({ error: "Not allowed" }, { status: 400 });
@@ -55,12 +55,17 @@ export async function POST(req: Request) {
     const token = authToken as string;
     const from = fromNumber as string;
 
+    const label =
+      typeof eventName === "string" && eventName.trim().length > 0
+        ? eventName.trim()
+        : "your event";
+
     const payload = new URLSearchParams();
     payload.append("To", normalizedTo);
     payload.append("From", from);
     payload.append(
       "Body",
-      "Pearlens: Here is your photo link. One-time message; msg & data rates may apply. Reply STOP to opt out."
+      `Pearlens: Here is your photo link from ${label}. One-time message; msg & data rates may apply. Reply STOP to opt out.`
     );
     payload.append("MediaUrl", photoUrl);
 

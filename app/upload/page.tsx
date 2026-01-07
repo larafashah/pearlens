@@ -385,7 +385,12 @@ export default function UploadPage() {
       const res = await fetch("/api/send-text", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone, photoUrl: lastPhotoUrl, honey: smsHoneypot }),
+        body: JSON.stringify({
+          phone,
+          photoUrl: lastPhotoUrl,
+          honey: smsHoneypot,
+          eventName: eventLabel,
+        }),
       });
 
       const data = await res.json();
