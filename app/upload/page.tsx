@@ -598,62 +598,68 @@ export default function UploadPage() {
 
         {status && <p className="mt-4 text-sm">{status}</p>}
 
-        {lastPhotoUrl && (
-          <div className="mt-6 border-t pt-6 text-left">
-            <p className="text-sm font-medium mb-2">Text this photo to yourself</p>
-            <p className="text-xs text-gray-600 mb-3">
-              Enter your number to receive a one-time SMS/MMS with your photo link. Message & data rates may apply. No
-              recurring messages.{" "}
-              <a href="/sms-consent" className="underline">
-                SMS consent details
-              </a>
+        <div className="mt-6 border-t pt-6 text-left">
+          <p className="text-sm font-medium mb-2">Text this photo to yourself</p>
+          <p className="text-sm text-gray-700 mb-3 leading-relaxed">
+            Enter your number to receive a one-time SMS/MMS text message from Pearlens with your photo link. No marketing
+            or recurring messages. Message &amp; data rates may apply. Reply STOP to opt out.{" "}
+            <a href="/sms-consent" className="underline">
+              SMS consent details
+            </a>
+          </p>
+          {!lastPhotoUrl && (
+            <p className="mb-3 text-xs text-amber-700 bg-amber-50 rounded-md px-3 py-2">
+              Upload a photo first to enable texting the link to yourself.
             </p>
-            <form className="space-y-3" onSubmit={handleSendText}>
-              <label className="flex items-center gap-2 text-xs text-gray-700">
-                <input
-                  type="checkbox"
-                  required
-                  className="h-4 w-4 rounded border-gray-300"
-                />
-                I agree to receive a one-time text message from Pearlens with my photo link. Msg & data rates may apply. Reply STOP to opt out.
-              </label>
+          )}
+          <form className="space-y-3" onSubmit={handleSendText}>
+            <label className="flex items-center gap-2 text-sm text-gray-800 leading-snug">
               <input
-                type="text"
-                name="email"
-                autoComplete="off"
-                value={smsHoneypot}
-                onChange={(e) => setSmsHoneypot(e.target.value)}
-                className="hidden"
-                tabIndex={-1}
-                aria-hidden="true"
-              />
-              <input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="+1..."
+                type="checkbox"
                 required
-                className="w-full rounded border border-gray-300 px-3 py-2 text-sm outline-none focus:border-black"
+                disabled={!lastPhotoUrl}
+                className="h-4 w-4 rounded border-gray-300 disabled:opacity-50"
               />
-              <button
-                type="submit"
-                disabled={smsStatus === "sending"}
-                className="w-full rounded-lg bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-900 transition-colors disabled:opacity-70"
+              I agree to receive a one-time text message from Pearlens with my photo link. Msg &amp; data rates may apply.
+              Reply STOP to opt out.
+            </label>
+            <input
+              type="text"
+              name="email"
+              autoComplete="off"
+              value={smsHoneypot}
+              onChange={(e) => setSmsHoneypot(e.target.value)}
+              className="hidden"
+              tabIndex={-1}
+              aria-hidden="true"
+            />
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="+1..."
+              required
+              disabled={!lastPhotoUrl}
+              className="w-full rounded border border-gray-300 px-3 py-2 text-sm outline-none focus:border-black disabled:bg-gray-100 disabled:text-gray-500"
+            />
+            <button
+              type="submit"
+              disabled={smsStatus === "sending" || !lastPhotoUrl}
+              className="w-full rounded-lg bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-900 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+            >
+              {smsStatus === "sending" ? "Sending..." : "Text me this photo"}
+            </button>
+            {smsMessage && (
+              <p
+                className={`text-sm ${
+                  smsStatus === "error" ? "text-red-600" : "text-green-700"
+                }`}
               >
-                {smsStatus === "sending" ? "Sending..." : "Text me this photo"}
-              </button>
-              {smsMessage && (
-                <p
-                  className={`text-sm ${
-                    smsStatus === "error" ? "text-red-600" : "text-green-700"
-                  }`}
-                >
-                  {smsMessage}
-                </p>
-              )}
-            </form>
-          </div>
-        )}
+                {smsMessage}
+              </p>
+            )}
+          </form>
+        </div>
       </section>
     </main>
   );

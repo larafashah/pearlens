@@ -19,6 +19,14 @@ export default function SmsConsentPage() {
             <p>One-time per request (only when you submit your number to receive a photo).</p>
           </div>
           <div>
+            <h2 className="font-medium">How you opt in</h2>
+            <p>You check the consent box and submit your phone number on the Pearlens upload page to receive a one-time text.</p>
+          </div>
+          <div>
+            <h2 className="font-medium">Message type</h2>
+            <p>Only a one-time text with your photo link. No marketing or recurring messages.</p>
+          </div>
+          <div>
             <h2 className="font-medium">Charges</h2>
             <p>Message and data rates may apply.</p>
           </div>
