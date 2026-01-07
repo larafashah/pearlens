@@ -21,15 +21,23 @@ export async function POST(req: Request) {
       );
     }
 
-    const { phone, photoUrl, honey, eventName } = await req.json();
+    const { phone, photoUrls, photoUrl, honey, eventName } = await req.json();
 
     if (typeof honey === "string" && honey.trim().length > 0) {
       return NextResponse.json({ error: "Not allowed" }, { status: 400 });
     }
 
-    if (!phone || !photoUrl) {
+    const urlsFromBody: string[] = [];
+    if (Array.isArray(photoUrls)) {
+      urlsFromBody.push(...photoUrls.filter((u) => typeof u === "string" && u.trim().length > 0));
+    }
+    if (photoUrl && typeof photoUrl === "string") {
+      urlsFromBody.push(photoUrl);
+    }
+
+    if (!phone || urlsFromBody.length === 0) {
       return NextResponse.json(
-        { error: "Phone and photoUrl are required." },
+        { error: "Phone and at least one photoUrl are required." },
         { status: 400 }
       );
     }
@@ -67,7 +75,7 @@ export async function POST(req: Request) {
       "Body",
       `Pearlens: Here is your photo link from ${label}. One-time message; msg & data rates may apply. Reply STOP to opt out.`
     );
-    payload.append("MediaUrl", photoUrl);
+    urlsFromBody.slice(0, 10).forEach((u) => payload.append("MediaUrl", u));
 
     const twilioResponse = await fetch(
       `https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`,

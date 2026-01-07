@@ -35,7 +35,7 @@ export default function UploadPage() {
   const [status, setStatus] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [watermarkReady, setWatermarkReady] = useState(false);
-  const [lastPhotoUrl, setLastPhotoUrl] = useState<string | null>(null);
+  const [lastPhotoUrls, setLastPhotoUrls] = useState<string[]>([]);
   const [phone, setPhone] = useState("");
   const [overallProgress, setOverallProgress] = useState(0);
   const [cancelRequested, setCancelRequested] = useState(false);
@@ -276,7 +276,7 @@ export default function UploadPage() {
 
     try {
       const watermark = getWatermark();
-      let lastUrl: string | null = null;
+      const uploadedUrls: string[] = [];
 
       for (const item of queuedFiles) {
         if (cancelRef.current) break;
@@ -320,7 +320,8 @@ export default function UploadPage() {
           );
         });
 
-        lastUrl = await getDownloadURL(uploadTask.snapshot.ref);
+        const url = await getDownloadURL(uploadTask.snapshot.ref);
+        uploadedUrls.push(url);
         setQueuedFiles((prev) =>
           prev.map((q) =>
             q.id === item.id ? { ...q, status: "done", progress: 100 } : q
@@ -328,9 +329,9 @@ export default function UploadPage() {
         );
       }
 
-      if (lastUrl) setLastPhotoUrl(lastUrl);
       if (!cancelRef.current) {
-        setStatus(`Uploaded ${queuedFiles.length} photo${queuedFiles.length === 1 ? "" : "s"}!`);
+        if (uploadedUrls.length > 0) setLastPhotoUrls(uploadedUrls);
+        setStatus(`Uploaded ${uploadedUrls.length} photo${uploadedUrls.length === 1 ? "" : "s"}!`);
         queuedFiles.forEach((q) => URL.revokeObjectURL(q.preview));
         setQueuedFiles([]);
         setOverallProgress(100);
@@ -372,7 +373,7 @@ export default function UploadPage() {
 
   const handleSendText = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!lastPhotoUrl) return;
+    if (lastPhotoUrls.length === 0) return;
     if (smsHoneypot.trim().length > 0) {
       setSmsStatus("error");
       setSmsMessage("Could not send the text. Please try again.");
@@ -387,7 +388,7 @@ export default function UploadPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           phone,
-          photoUrl: lastPhotoUrl,
+          photoUrls: lastPhotoUrls,
           honey: smsHoneypot,
           eventName: eventLabel,
         }),
@@ -612,7 +613,7 @@ export default function UploadPage() {
               SMS consent details
             </a>
           </p>
-          {!lastPhotoUrl && (
+          {lastPhotoUrls.length === 0 && (
             <p className="mb-3 text-xs text-amber-700 bg-amber-50 rounded-md px-3 py-2">
               Upload a photo first to enable texting the link to yourself.
             </p>
@@ -643,12 +644,12 @@ export default function UploadPage() {
               onChange={(e) => setPhone(e.target.value)}
               placeholder="+1..."
               required
-              disabled={!lastPhotoUrl}
+              disabled={lastPhotoUrls.length === 0}
               className="w-full rounded border border-gray-300 px-3 py-2 text-sm outline-none focus:border-black disabled:bg-gray-100 disabled:text-gray-500"
             />
             <button
               type="submit"
-              disabled={smsStatus === "sending" || !lastPhotoUrl}
+              disabled={smsStatus === "sending" || lastPhotoUrls.length === 0}
               className="w-full rounded-lg bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-900 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {smsStatus === "sending" ? "Sending..." : "Text me this photo"}
