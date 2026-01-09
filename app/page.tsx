@@ -503,13 +503,9 @@ export default function HomePage() {
           <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-end sm:gap-3 text-center sm:text-right">
             <span>Founder: Lara Fashah</span>
             <span className="text-neutral-400">•</span>
-            <span>17 Friar Way, Wayne, NJ 07470</span>
-            <span className="text-neutral-400">•</span>
             <a href="mailto:hello@pearlens.com" className="underline">
               hello@pearlens.com
             </a>
-            <span>-</span>
-            <span>(862) 686-3964</span>
             <span className="text-neutral-400">•</span>
             <a href="/privacy" className="underline">
               Privacy
